@@ -39,9 +39,13 @@ Thumbs.db
 # Prisma
 apps/api/prisma/migrations/*.sql.backup
 
+# RSA Keys (JWT signing)
+apps/api/keys/
+
 # Misc
 *.tsbuildinfo
 .eslintcache
 QUICK-START.md
 SPRINT-1-SUMMARY.md
 SPRINT-1-VERIFICATION.md
+SPRINT-2-SUMMARY.md

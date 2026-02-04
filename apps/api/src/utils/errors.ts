@@ -28,7 +28,7 @@ export class ApiError extends Error {
   toJSON() {
     return {
       type: `https://tenantforge.dev/errors/${this.code}`,
-      title: this.name,
+      title: this.message,
       status: this.statusCode,
       detail: this.message,
       errors: this.errors,
@@ -89,5 +89,15 @@ export class InternalServerError extends ApiError {
   constructor(message = "Internal server error") {
     super(500, message, "internal_error");
     this.name = "InternalServerError";
+  }
+}
+
+/**
+ * Generic application error with custom status code and code
+ */
+export class AppError extends ApiError {
+  constructor(message: string, statusCode: number, code?: string) {
+    super(statusCode, message, code);
+    this.name = "AppError";
   }
 }

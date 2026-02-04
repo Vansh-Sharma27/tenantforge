@@ -24,6 +24,7 @@ export const errorMiddleware: ErrorRequestHandler = (
   // Handle known API errors
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({
+      success: false,
       ...err.toJSON(),
       instance: req.path,
       traceId: requestId,
@@ -40,6 +41,7 @@ export const errorMiddleware: ErrorRequestHandler = (
     }));
 
     res.status(400).json({
+      success: false,
       type: "https://tenantforge.dev/errors/validation",
       title: "Validation Error",
       status: 400,
@@ -53,6 +55,7 @@ export const errorMiddleware: ErrorRequestHandler = (
 
   // Handle unknown errors - don't leak details in production
   res.status(500).json({
+    success: false,
     type: "https://tenantforge.dev/errors/internal",
     title: "Internal Server Error",
     status: 500,
@@ -66,6 +69,7 @@ export const notFoundMiddleware = (req: Request, res: Response) => {
   const requestId = req.id || "unknown";
 
   res.status(404).json({
+    success: false,
     type: "https://tenantforge.dev/errors/not_found",
     title: "Not Found",
     status: 404,
