@@ -14,6 +14,8 @@ export default defineConfig({
       exclude: ["src/types/**", "**/*.d.ts"],
     },
     testTimeout: 10000,
+    // Run integration tests sequentially to avoid database conflicts
+    fileParallelism: false,
   },
   resolve: {
     alias: {

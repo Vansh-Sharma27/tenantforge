@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 
 import authRoutes from "./auth.routes";
+import workspaceRoutes from "./workspace.routes";
 
 const router = Router();
 
@@ -18,7 +19,7 @@ router.get("/health", (_req: Request, res: Response) => {
 
 // API v1 routes
 router.use("/api/v1/auth", authRoutes);
+router.use("/api/v1/workspaces", workspaceRoutes);
 // router.use('/api/v1/users', userRoutes);
-// router.use('/api/v1/workspaces', workspaceRoutes);
 
 export default router;

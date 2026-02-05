@@ -8,7 +8,8 @@
       "@/*": ["./src/*"],
       "@tenantforge/shared": ["../../packages/shared/src"],
       "@tenantforge/shared/*": ["../../packages/shared/src/*"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests", "coverage"]

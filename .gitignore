@@ -45,7 +45,12 @@ apps/api/keys/
 # Misc
 *.tsbuildinfo
 .eslintcache
+
+# Sprint summaries and documentation
 QUICK-START.md
 SPRINT-1-SUMMARY.md
 SPRINT-1-VERIFICATION.md
 SPRINT-2-SUMMARY.md
+SPRINT_3_SUMMARY.md
+SPRINT_3_COMPLETION.md
+COMMIT_MESSAGE.txt

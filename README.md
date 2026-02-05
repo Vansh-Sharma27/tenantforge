@@ -2,8 +2,8 @@
 
 A production-ready multi-tenant SaaS starter template built with TypeScript.
 
-**Current Version**: v0.2.0 (Sprint 2: Authentication Complete)
-**Status**: 🚧 In Development | ✅ Sprint 1 & 2 Complete
+**Current Version**: v0.3.0 (Sprint 3: Multi-Tenancy Complete)
+**Status**: 🚧 In Development | ✅ Sprint 1, 2 & 3 Complete
 
 ## Tech Stack
 
@@ -75,9 +75,9 @@ A production-ready multi-tenant SaaS starter template built with TypeScript.
    - Web: http://localhost:3000
    - Health Check: http://localhost:3001/health
 
-### Testing Authentication
+### Testing the API
 
-Register a new user:
+**Register a user:**
 
 ```bash
 curl -X POST http://localhost:3001/api/v1/auth/register \
@@ -86,6 +86,17 @@ curl -X POST http://localhost:3001/api/v1/auth/register \
     "email": "test@example.com",
     "password": "SecurePass123!",
     "name": "Test User"
+  }'
+```
+
+**Create a workspace:**
+
+```bash
+curl -X POST http://localhost:3001/api/v1/workspaces \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <access_token>" \
+  -d '{
+    "name": "My Company"
   }'
 ```
 
@@ -130,7 +141,7 @@ pnpm format           # Format code
 
 ## Features
 
-### ✅ Implemented (Sprint 1 & 2)
+### ✅ Implemented (Sprint 1, 2 & 3)
 
 - **Foundation**: Monorepo with Turborepo, Docker Compose, TypeScript, Prisma
 - **Database**: PostgreSQL schema with 8 models (User, Session, Workspace, etc.)
@@ -140,18 +151,20 @@ pnpm format           # Format code
   - Password reset flow
   - Token refresh with rotation
   - Auth middleware (requireAuth, optionalAuth)
+- **Multi-Tenancy** (NEW in v0.3.0):
+  - Workspace creation and management
+  - Tenant isolation middleware
+  - Role-based access control (OWNER, ADMIN, MEMBER, VIEWER)
+  - Soft delete with 30-day grace period
+  - Workspace slug generation with collision handling
 - **Security**:
   - Argon2id password hashing
   - Single-use refresh token rotation
   - Session tracking with IP and user agent
   - Generic error messages prevent user enumeration
-- **Testing**: 60 tests with 94% coverage
-
-### 🚧 In Progress (Sprint 3)
-
-- **Multi-tenancy**: Row-level workspace isolation
-- **RBAC**: Role-based access control (Owner, Admin, Member, Viewer)
-- **OAuth**: Google and GitHub authentication
+  - Non-member access returns 404 (prevents workspace enumeration)
+  - Password confirmation required for destructive operations
+- **Testing**: 138 tests with 93% coverage
 
 ### 📋 Planned (Sprint 4-6)
 
@@ -179,6 +192,18 @@ All authentication endpoints are prefixed with `/api/v1/auth`:
 | POST   | `/refresh`         | Refresh access token      | No            |
 | POST   | `/forgot-password` | Request password reset    | No            |
 | POST   | `/reset-password`  | Reset password with token | No            |
+
+### Workspace Endpoints
+
+All workspace endpoints are prefixed with `/api/v1/workspaces`:
+
+| Method | Endpoint | Description           | Auth Required | Role Required |
+| ------ | -------- | --------------------- | ------------- | ------------- |
+| POST   | `/`      | Create workspace      | Yes           | -             |
+| GET    | `/`      | List user workspaces  | Yes           | -             |
+| GET    | `/:slug` | Get workspace details | Yes           | MEMBER+       |
+| PATCH  | `/:slug` | Update workspace      | Yes           | ADMIN+        |
+| DELETE | `/:slug` | Delete workspace      | Yes           | OWNER         |
 
 Full API documentation will be available at `/docs` in a future sprint.
 
