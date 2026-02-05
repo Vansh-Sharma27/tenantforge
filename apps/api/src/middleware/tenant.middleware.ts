@@ -50,6 +50,8 @@ export async function requireWorkspace(req: Request, _res: Response, next: NextF
       id: result.membership.id,
       role: result.membership.role,
       joinedAt: result.membership.joinedAt,
+      userId: result.membership.userId,
+      workspaceId: result.membership.workspaceId,
     };
 
     next();

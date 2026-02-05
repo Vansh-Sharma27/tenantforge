@@ -28,6 +28,8 @@ const envSchema = z.object({
   // Email (optional in development)
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().email().optional(),
+  EMAIL_ENABLED: z.coerce.boolean().default(false),
+  FRONTEND_URL: z.string().url().default("http://localhost:3000"),
 
   // OAuth (optional)
   GITHUB_CLIENT_ID: z.string().optional(),
@@ -94,6 +96,11 @@ export const config = {
   email: {
     apiKey: env.RESEND_API_KEY,
     from: env.EMAIL_FROM || "noreply@tenantforge.dev",
+    enabled: env.EMAIL_ENABLED,
+  },
+
+  frontend: {
+    url: env.FRONTEND_URL,
   },
 
   oauth: {

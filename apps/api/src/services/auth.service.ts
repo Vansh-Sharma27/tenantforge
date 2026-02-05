@@ -90,7 +90,7 @@ export class AuthService {
 
     // Find user by email
     const user = await userRepository.findByEmail(email);
-    if (!user) {
+    if (!user || !user.password) {
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 

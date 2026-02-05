@@ -2,8 +2,8 @@
 
 A production-ready multi-tenant SaaS starter template built with TypeScript.
 
-**Current Version**: v0.3.0 (Sprint 3: Multi-Tenancy Complete)
-**Status**: 🚧 In Development | ✅ Sprint 1, 2 & 3 Complete
+**Current Version**: v0.4.0 (Sprint 4: Team Management Complete)
+**Status**: 🚧 In Development | ✅ Sprint 1, 2, 3 & 4 Complete
 
 ## Tech Stack
 
@@ -141,7 +141,7 @@ pnpm format           # Format code
 
 ## Features
 
-### ✅ Implemented (Sprint 1, 2 & 3)
+### ✅ Implemented (Sprint 1, 2, 3 & 4)
 
 - **Foundation**: Monorepo with Turborepo, Docker Compose, TypeScript, Prisma
 - **Database**: PostgreSQL schema with 8 models (User, Session, Workspace, etc.)
@@ -151,12 +151,19 @@ pnpm format           # Format code
   - Password reset flow
   - Token refresh with rotation
   - Auth middleware (requireAuth, optionalAuth)
-- **Multi-Tenancy** (NEW in v0.3.0):
+- **Multi-Tenancy**:
   - Workspace creation and management
   - Tenant isolation middleware
   - Role-based access control (OWNER, ADMIN, MEMBER, VIEWER)
   - Soft delete with 30-day grace period
   - Workspace slug generation with collision handling
+- **Team Management** (NEW in v0.4.0):
+  - Invite members via email
+  - Role-based permissions (OWNER, ADMIN, MEMBER, VIEWER)
+  - Member management (update roles, remove members)
+  - Ownership transfer
+  - Email service with Resend and BullMQ
+  - Invitation expiry and token validation
 - **Security**:
   - Argon2id password hashing
   - Single-use refresh token rotation
@@ -164,11 +171,10 @@ pnpm format           # Format code
   - Generic error messages prevent user enumeration
   - Non-member access returns 404 (prevents workspace enumeration)
   - Password confirmation required for destructive operations
-- **Testing**: 138 tests with 93% coverage
+- **Testing**: 274 tests with high coverage (100% pass rate)
 
-### 📋 Planned (Sprint 4-6)
+### 📋 Planned (Sprint 5-6)
 
-- **Team Management**: Invitations, member management
 - **Billing**: Stripe integration with subscription plans
 - **Audit Logging**: Track all significant actions
 - **Rate Limiting**: Redis-based per-tenant limits
@@ -176,7 +182,27 @@ pnpm format           # Format code
 
 ## Environment Variables
 
-See `.env.example` for all available configuration options.
+Copy `.env.example` to `.env` and configure the following:
+
+**Required:**
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `REDIS_URL`: Redis connection string
+- `JWT_SECRET` and `JWT_REFRESH_SECRET`: Generate with `openssl rand -base64 64`
+
+**Email Service (Sprint 4):**
+
+- `RESEND_API_KEY`: Get from [resend.com/api-keys](https://resend.com/api-keys)
+- `EMAIL_FROM`: Sender address for system emails
+- `EMAIL_ENABLED`: Set to `true` in production
+- `FRONTEND_URL`: Base URL for email links (invitations, verification)
+
+**Optional:**
+
+- Stripe keys for billing (Sprint 5)
+- OAuth provider credentials (GitHub, Google)
+
+See `.env.example` for complete configuration options.
 
 ## API Documentation
 
@@ -204,6 +230,20 @@ All workspace endpoints are prefixed with `/api/v1/workspaces`:
 | GET    | `/:slug` | Get workspace details | Yes           | MEMBER+       |
 | PATCH  | `/:slug` | Update workspace      | Yes           | ADMIN+        |
 | DELETE | `/:slug` | Delete workspace      | Yes           | OWNER         |
+
+### Member Endpoints (Sprint 4)
+
+All member endpoints are prefixed with `/api/v1/workspaces/:slug/members`:
+
+| Method | Endpoint                     | Description            | Auth Required | Role Required |
+| ------ | ---------------------------- | ---------------------- | ------------- | ------------- |
+| POST   | `/invite`                    | Invite member by email | Yes           | ADMIN+        |
+| GET    | `/`                          | List workspace members | Yes           | MEMBER+       |
+| GET    | `/:memberId`                 | Get member details     | Yes           | MEMBER+       |
+| PATCH  | `/:memberId/role`            | Update member role     | Yes           | ADMIN+        |
+| DELETE | `/:memberId`                 | Remove member          | Yes           | ADMIN+        |
+| POST   | `/:memberId/transfer`        | Transfer ownership     | Yes           | OWNER         |
+| POST   | `/invitations/:token/accept` | Accept invitation      | Yes           | -             |
 
 Full API documentation will be available at `/docs` in a future sprint.
 

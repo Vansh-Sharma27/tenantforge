@@ -7,7 +7,7 @@ import { verifyAccessToken } from "@/utils/jwt";
  * Middleware that requires valid authentication.
  * Returns 401 if no token or invalid token.
  */
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   try {
     // Extract token from Authorization header
     const authHeader = req.headers.authorization;
@@ -38,7 +38,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
  * Middleware that optionally attaches user if token is present.
  * Does not throw error if no token, just continues without user.
  */
-export function optionalAuth(req: Request, res: Response, next: NextFunction) {
+export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
   try {
     // Extract token from Authorization header
     const authHeader = req.headers.authorization;

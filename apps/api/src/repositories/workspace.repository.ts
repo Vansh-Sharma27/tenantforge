@@ -105,7 +105,7 @@ export class WorkspaceRepository {
   ): Promise<Workspace> {
     return await prisma.workspace.update({
       where: { id },
-      data,
+      data: data as any, // Type assertion needed for JsonValue compatibility
     });
   }
 

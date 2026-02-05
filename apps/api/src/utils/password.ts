@@ -6,11 +6,12 @@ import argon2 from "argon2";
  * - timeCost: 3 iterations
  * - parallelism: 4 threads
  */
-const ARGON2_OPTIONS: argon2.Options = {
+const ARGON2_OPTIONS: argon2.Options & { raw?: false } = {
   type: argon2.argon2id,
   memoryCost: 65536, // 64 MB
   timeCost: 3,
   parallelism: 4,
+  raw: false,
 };
 
 /**

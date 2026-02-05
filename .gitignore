@@ -46,6 +46,9 @@ apps/api/keys/
 *.tsbuildinfo
 .eslintcache
 
+# BullMQ
+bullmq-*.lock
+
 # Sprint summaries and documentation
 QUICK-START.md
 SPRINT-1-SUMMARY.md
@@ -53,4 +56,8 @@ SPRINT-1-VERIFICATION.md
 SPRINT-2-SUMMARY.md
 SPRINT_3_SUMMARY.md
 SPRINT_3_COMPLETION.md
+SPRINT-4-PLAN.md
+SPRINT-4-COMPLETE.md
+SPRINT-4-SUMMARY.md
+SPRINT4_PHASE1_IMPLEMENTATION.md
 COMMIT_MESSAGE.txt

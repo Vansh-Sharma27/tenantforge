@@ -203,7 +203,7 @@ export class WorkspaceService {
 
     // Fetch user to verify password
     const user = await userRepository.findById(userId);
-    if (!user) {
+    if (!user || !user.password) {
       throw new UnauthorizedError("Invalid credentials");
     }
 

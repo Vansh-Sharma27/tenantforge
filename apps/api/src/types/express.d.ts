@@ -15,6 +15,8 @@ export interface MembershipContext {
   id: string;
   role: Role;
   joinedAt: Date;
+  userId: string;
+  workspaceId: string;
 }
 
 // Extend Express Request type to include id, user, workspace, and membership

@@ -6,7 +6,7 @@ import { requireAuth } from "@/middleware/auth.middleware";
 import { requireRole } from "@/middleware/rbac.middleware";
 import { requireWorkspace } from "@/middleware/tenant.middleware";
 
-const router = Router();
+const router: Router = Router();
 
 /**
  * Workspace routes
