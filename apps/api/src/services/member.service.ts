@@ -2,7 +2,9 @@ import { PrismaClient, Role } from "@prisma/client";
 
 import { membershipRepository } from "@/repositories/membership.repository";
 import { userRepository } from "@/repositories/user.repository";
+import { auditService } from "@/services/audit.service";
 import { emailService } from "@/services/email.service";
+import { AuditActions } from "@/types/audit.types";
 import { ROLE_HIERARCHY } from "@/types/workspace.types";
 import { ForbiddenError, NotFoundError, UnauthorizedError, BadRequestError } from "@/utils/errors";
 import { logger } from "@/utils/logger";
@@ -171,6 +173,22 @@ export class MemberService {
       newRole
     );
 
+    // Audit log
+    auditService.log({
+      workspaceId: targetMembership.workspaceId,
+      actorId: actorMembership.userId,
+      actorType: "user",
+      action: AuditActions.MEMBER_ROLE_CHANGED,
+      resourceType: "membership",
+      resourceId: membershipId,
+      metadata: {
+        targetUserId: targetMembership.userId,
+        targetEmail: targetMembership.user.email,
+        oldRole,
+        newRole,
+      },
+    });
+
     logger.info(
       {
         membershipId,
@@ -234,6 +252,21 @@ export class MemberService {
       targetMembership.user.email,
       targetMembership.workspace.name
     );
+
+    // Audit log
+    auditService.log({
+      workspaceId,
+      actorId: actorMembership.userId,
+      actorType: "user",
+      action: AuditActions.MEMBER_REMOVED,
+      resourceType: "membership",
+      resourceId: membershipId,
+      metadata: {
+        targetUserId: targetMembership.userId,
+        targetEmail: targetMembership.user.email,
+        role: targetMembership.role,
+      },
+    });
 
     logger.info(
       {

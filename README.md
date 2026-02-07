@@ -2,8 +2,8 @@
 
 A production-ready multi-tenant SaaS starter template built with TypeScript.
 
-**Current Version**: v0.4.0 (Sprint 4: Team Management Complete)
-**Status**: 🚧 In Development | ✅ Sprint 1, 2, 3 & 4 Complete
+**Current Version**: v0.5.0 (Sprint 5: Billing & Admin Complete)
+**Status**: 🚧 In Development | ✅ Sprint 1, 2, 3, 4 & 5 Complete
 
 ## Tech Stack
 
@@ -27,7 +27,7 @@ A production-ready multi-tenant SaaS starter template built with TypeScript.
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/tenantforge.git
+   git clone https://github.com/Vansh-Sharma27/tenantforge.git
    cd tenantforge
    ```
 
@@ -141,7 +141,7 @@ pnpm format           # Format code
 
 ## Features
 
-### ✅ Implemented (Sprint 1, 2, 3 & 4)
+### ✅ Implemented (Sprint 1-5)
 
 - **Foundation**: Monorepo with Turborepo, Docker Compose, TypeScript, Prisma
 - **Database**: PostgreSQL schema with 8 models (User, Session, Workspace, etc.)
@@ -171,14 +171,31 @@ pnpm format           # Format code
   - Generic error messages prevent user enumeration
   - Non-member access returns 404 (prevents workspace enumeration)
   - Password confirmation required for destructive operations
-- **Testing**: 274 tests with high coverage (100% pass rate)
+- **Billing** (NEW in v0.5.0):
+  - Stripe integration with subscription plans (FREE, PRO, ENTERPRISE)
+  - Checkout session creation
+  - Customer Portal for self-service management
+  - Webhook handler for subscription events
+  - Automatic plan upgrades and downgrades
+- **Audit Logging** (NEW in v0.5.0):
+  - Non-blocking audit service with batching
+  - Tracks 19 action types (auth, workspace, team, billing, security)
+  - Captures IP address and user agent
+  - Batch writes for performance
+- **Rate Limiting** (NEW in v0.5.0):
+  - Redis-backed distributed rate limiting
+  - Global rate limit (1,000 requests/min per IP)
+  - Auth rate limit (5 attempts/15min per IP)
+  - Plan-based workspace limits (FREE: 1k/day, PRO: 50k/day, ENTERPRISE: 1M/day)
+- **Testing**: 274 unit tests + comprehensive E2E testing (100% pass rate)
+- **Docker**: Production-ready Docker Compose setup with health checks
 
-### 📋 Planned (Sprint 5-6)
+### 📋 Planned (Sprint 6)
 
-- **Billing**: Stripe integration with subscription plans
-- **Audit Logging**: Track all significant actions
-- **Rate Limiting**: Redis-based per-tenant limits
 - **UI**: Core pages (login, dashboard, settings, members, billing)
+- **Notifications**: Failed payment alerts
+- **Usage Analytics**: API usage dashboard
+- **Audit Log Viewer**: UI for viewing audit logs
 
 ## Environment Variables
 
@@ -197,10 +214,17 @@ Copy `.env.example` to `.env` and configure the following:
 - `EMAIL_ENABLED`: Set to `true` in production
 - `FRONTEND_URL`: Base URL for email links (invitations, verification)
 
+**Billing (Sprint 5):**
+
+- `STRIPE_SECRET_KEY`: Get from [dashboard.stripe.com](https://dashboard.stripe.com/test/apikeys)
+- `STRIPE_WEBHOOK_SECRET`: Webhook signing secret
+- `STRIPE_PRICE_PRO`: Price ID for Pro plan
+- `STRIPE_PRICE_ENTERPRISE`: Price ID for Enterprise plan
+
 **Optional:**
 
-- Stripe keys for billing (Sprint 5)
 - OAuth provider credentials (GitHub, Google)
+- Rate limiting configuration (see `.env.example`)
 
 See `.env.example` for complete configuration options.
 
@@ -233,17 +257,43 @@ All workspace endpoints are prefixed with `/api/v1/workspaces`:
 
 ### Member Endpoints (Sprint 4)
 
-All member endpoints are prefixed with `/api/v1/workspaces/:slug/members`:
+Member management endpoints:
 
-| Method | Endpoint                     | Description            | Auth Required | Role Required |
-| ------ | ---------------------------- | ---------------------- | ------------- | ------------- |
-| POST   | `/invite`                    | Invite member by email | Yes           | ADMIN+        |
-| GET    | `/`                          | List workspace members | Yes           | MEMBER+       |
-| GET    | `/:memberId`                 | Get member details     | Yes           | MEMBER+       |
-| PATCH  | `/:memberId/role`            | Update member role     | Yes           | ADMIN+        |
-| DELETE | `/:memberId`                 | Remove member          | Yes           | ADMIN+        |
-| POST   | `/:memberId/transfer`        | Transfer ownership     | Yes           | OWNER         |
-| POST   | `/invitations/:token/accept` | Accept invitation      | Yes           | -             |
+| Method | Endpoint                        | Description            | Auth Required | Role Required |
+| ------ | ------------------------------- | ---------------------- | ------------- | ------------- |
+| GET    | `/workspaces/:slug/members`     | List workspace members | Yes           | MEMBER+       |
+| PATCH  | `/workspaces/:slug/members/:id` | Update member role     | Yes           | ADMIN+        |
+| DELETE | `/workspaces/:slug/members/:id` | Remove member          | Yes           | ADMIN+        |
+| POST   | `/workspaces/:slug/leave`       | Leave workspace        | Yes           | MEMBER+       |
+| POST   | `/workspaces/:slug/transfer`    | Transfer ownership     | Yes           | OWNER         |
+
+### Invitation Endpoints (Sprint 4)
+
+Invitation management endpoints:
+
+| Method | Endpoint                            | Description            | Auth Required | Role Required |
+| ------ | ----------------------------------- | ---------------------- | ------------- | ------------- |
+| POST   | `/workspaces/:slug/invitations`     | Send invitation        | Yes           | ADMIN+        |
+| GET    | `/workspaces/:slug/invitations`     | List pending invites   | Yes           | ADMIN+        |
+| DELETE | `/workspaces/:slug/invitations/:id` | Revoke invitation      | Yes           | ADMIN+        |
+| GET    | `/invitations/:token`               | Get invitation details | No            | -             |
+| POST   | `/invitations/:token/accept`        | Accept invitation      | Optional      | -             |
+
+### Billing Endpoints (Sprint 5)
+
+All billing endpoints are prefixed with `/api/v1/workspaces/:slug/billing`:
+
+| Method | Endpoint    | Description             | Auth Required | Role Required |
+| ------ | ----------- | ----------------------- | ------------- | ------------- |
+| POST   | `/checkout` | Create checkout session | Yes           | OWNER         |
+| POST   | `/portal`   | Create portal session   | Yes           | OWNER         |
+| GET    | `/`         | Get billing info        | Yes           | ADMIN+        |
+
+### Webhook Endpoints (Sprint 5)
+
+| Method | Endpoint           | Description           | Auth Required |
+| ------ | ------------------ | --------------------- | ------------- |
+| POST   | `/webhooks/stripe` | Stripe webhook events | Signature     |
 
 Full API documentation will be available at `/docs` in a future sprint.
 

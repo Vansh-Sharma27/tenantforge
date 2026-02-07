@@ -14,6 +14,7 @@ export class WorkspaceRepository {
     slug: string;
     plan?: Plan;
     settings?: Record<string, any>;
+    stripeCustomerId?: string;
   }): Promise<Workspace> {
     return await prisma.workspace.create({
       data: {
@@ -21,6 +22,7 @@ export class WorkspaceRepository {
         slug: data.slug,
         plan: data.plan || Plan.FREE,
         settings: data.settings || {},
+        stripeCustomerId: data.stripeCustomerId,
       },
     });
   }
@@ -141,6 +143,18 @@ export class WorkspaceRepository {
     return await prisma.membership.count({
       where: {
         workspaceId,
+      },
+    });
+  }
+
+  /**
+   * Finds a workspace by Stripe subscription ID
+   */
+  async findByStripeSubscriptionId(subscriptionId: string): Promise<Workspace | null> {
+    return await prisma.workspace.findFirst({
+      where: {
+        stripeSubId: subscriptionId,
+        deletedAt: null,
       },
     });
   }

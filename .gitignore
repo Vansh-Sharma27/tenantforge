@@ -50,7 +50,6 @@ apps/api/keys/
 bullmq-*.lock
 
 # Sprint summaries and documentation
-QUICK-START.md
 SPRINT-1-SUMMARY.md
 SPRINT-1-VERIFICATION.md
 SPRINT-2-SUMMARY.md
@@ -60,4 +59,10 @@ SPRINT-4-PLAN.md
 SPRINT-4-COMPLETE.md
 SPRINT-4-SUMMARY.md
 SPRINT4_PHASE1_IMPLEMENTATION.md
-COMMIT_MESSAGE.txt
+
+# Temporary files
+*.tmp
+*.bak
+
+# Stripe test data
+.stripe/

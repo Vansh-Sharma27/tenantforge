@@ -6,7 +6,9 @@ import { invitationRepository } from "@/repositories/invitation.repository";
 import { membershipRepository } from "@/repositories/membership.repository";
 import { userRepository } from "@/repositories/user.repository";
 import { workspaceRepository } from "@/repositories/workspace.repository";
+import { auditService } from "@/services/audit.service";
 import { emailService } from "@/services/email.service";
+import { AuditActions } from "@/types/audit.types";
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "@/utils/errors";
 import { logger } from "@/utils/logger";
 
@@ -86,6 +88,20 @@ export class InvitationService {
       role,
       token
     );
+
+    // Audit log
+    auditService.log({
+      workspaceId,
+      actorId: inviterId,
+      actorType: "user",
+      action: AuditActions.MEMBER_INVITED,
+      resourceType: "invitation",
+      resourceId: invitation.id,
+      metadata: {
+        email,
+        role,
+      },
+    });
 
     logger.info(
       {
@@ -218,6 +234,20 @@ export class InvitationService {
 
       // Queue welcome email
       await emailService.sendWelcomeEmail(invitation.email, workspace.name, workspace.slug);
+
+      // Audit log
+      auditService.log({
+        workspaceId: invitation.workspaceId,
+        actorId: userId,
+        actorType: "user",
+        action: AuditActions.MEMBER_JOINED,
+        resourceType: "membership",
+        resourceId: membership.id,
+        metadata: {
+          email: invitation.email,
+          role: invitation.role,
+        },
+      });
 
       logger.info(
         {

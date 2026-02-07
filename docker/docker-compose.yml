@@ -44,13 +44,13 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"
+    env_file:
+      - ../.env
     environment:
       NODE_ENV: development
       PORT: 3001
       DATABASE_URL: postgresql://postgres:postgres@db:5432/tenantforge
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: dev-jwt-secret-change-in-production-32chars
-      JWT_REFRESH_SECRET: dev-refresh-secret-change-in-production-32
     depends_on:
       db:
         condition: service_healthy

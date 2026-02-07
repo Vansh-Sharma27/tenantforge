@@ -44,6 +44,8 @@ export async function requireWorkspace(req: Request, _res: Response, next: NextF
       slug: result.workspace.slug,
       name: result.workspace.name,
       plan: result.workspace.plan,
+      stripeCustomerId: result.workspace.stripeCustomerId,
+      stripeSubId: result.workspace.stripeSubId,
     };
 
     req.membership = {

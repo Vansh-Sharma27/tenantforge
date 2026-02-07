@@ -8,6 +8,8 @@ export interface WorkspaceContext {
   slug: string;
   name: string;
   plan: Plan;
+  stripeCustomerId: string | null;
+  stripeSubId: string | null;
 }
 
 // Membership context for RBAC
@@ -19,7 +21,13 @@ export interface MembershipContext {
   workspaceId: string;
 }
 
-// Extend Express Request type to include id, user, workspace, and membership
+// Audit context for request tracking
+export interface AuditContext {
+  ipAddress: string;
+  userAgent: string;
+}
+
+// Extend Express Request type to include id, user, workspace, membership, and auditContext
 declare global {
   namespace Express {
     interface Request {
@@ -27,6 +35,7 @@ declare global {
       user?: TokenPayload;
       workspace?: WorkspaceContext;
       membership?: MembershipContext;
+      auditContext?: AuditContext;
     }
   }
 }

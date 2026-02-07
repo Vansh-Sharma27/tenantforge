@@ -82,9 +82,15 @@ importers:
       rate-limit-redis:
         specifier: ^4.3.1
         version: 4.3.1(express-rate-limit@8.2.1(express@4.22.1))
+      rate-limiter-flexible:
+        specifier: ^9.1.0
+        version: 9.1.0
       resend:
         specifier: ^6.9.1
         version: 6.9.1
+      stripe:
+        specifier: ^20.3.0
+        version: 20.3.0(@types/node@20.19.30)
       zod:
         specifier: ^3.22.4
         version: 3.25.76
@@ -4472,6 +4478,12 @@ packages:
     peerDependencies:
       express-rate-limit: ">= 6"
 
+  rate-limiter-flexible@9.1.0:
+    resolution:
+      {
+        integrity: sha512-0jjTtKWlF4UnMLr64chsKfyQsRlT3lc6KXK2B+N8wPkw2+QMbYN6ft4jNnZuHfllKpk3R5Vr4g7EM+Ms8H1aBw==,
+      }
+
   raw-body@2.5.3:
     resolution:
       {
@@ -4986,6 +4998,18 @@ packages:
       {
         integrity: sha512-631UJ6O00eNGfMiWG78ck80dfBab8X6IVFB51jZK5Icd7XAs60Z5y7QdSd/wGIklnWvRbUNloVzhOKKmutxQ6Q==,
       }
+
+  stripe@20.3.0:
+    resolution:
+      {
+        integrity: sha512-DYzcmV1MfYhycr1GwjCjeQVYk9Gu8dpxyTlu7qeDCsuguug7oUTxPsUQuZeSf/OPzK7pofqobvOKVqAwlpgf/Q==,
+      }
+    engines: { node: ">=16" }
+    peerDependencies:
+      "@types/node": ">=16"
+    peerDependenciesMeta:
+      "@types/node":
+        optional: true
 
   styled-jsx@5.1.1:
     resolution:
@@ -8086,6 +8110,8 @@ snapshots:
     dependencies:
       express-rate-limit: 8.2.1(express@4.22.1)
 
+  rate-limiter-flexible@9.1.0: {}
+
   raw-body@2.5.3:
     dependencies:
       bytes: 3.1.2
@@ -8442,6 +8468,10 @@ snapshots:
   strip-literal@2.1.1:
     dependencies:
       js-tokens: 9.0.1
+
+  stripe@20.3.0(@types/node@20.19.30):
+    optionalDependencies:
+      "@types/node": 20.19.30
 
   styled-jsx@5.1.1(react@18.3.1):
     dependencies:

@@ -3,6 +3,9 @@ import { Plan, Role } from "@prisma/client";
 import { membershipRepository } from "@/repositories/membership.repository";
 import { userRepository } from "@/repositories/user.repository";
 import { workspaceRepository } from "@/repositories/workspace.repository";
+import { auditService } from "@/services/audit.service";
+import { stripeService } from "@/services/stripe.service";
+import { AuditActions } from "@/types/audit.types";
 import { ConflictError, NotFoundError, UnauthorizedError, ForbiddenError } from "@/utils/errors";
 import { logger } from "@/utils/logger";
 import { verifyPassword } from "@/utils/password";
@@ -49,12 +52,36 @@ export class WorkspaceService {
       finalSlug = slugToTry;
     }
 
+    // Get user details for Stripe customer
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError("User");
+    }
+
+    // Create Stripe customer (optional - only if Stripe is configured)
+    let stripeCustomerId: string | undefined;
+    try {
+      const customer = await stripeService.createCustomer({
+        workspaceId: "", // Will be updated after workspace creation
+        workspaceSlug: finalSlug,
+        workspaceName: name,
+        userId: user.id,
+        userEmail: user.email,
+        userName: user.name || user.email,
+      });
+      stripeCustomerId = customer.id;
+    } catch (error) {
+      // If Stripe is not configured, continue without customer creation
+      logger.warn({ error }, "Failed to create Stripe customer - continuing without billing");
+    }
+
     // Create workspace with FREE plan and default settings
     const workspace = await workspaceRepository.create({
       name,
       slug: finalSlug,
       plan: Plan.FREE,
       settings: {},
+      stripeCustomerId,
     });
 
     // Create membership with OWNER role
@@ -65,11 +92,27 @@ export class WorkspaceService {
       invitedById: userId,
     });
 
+    // Audit log
+    auditService.log({
+      workspaceId: workspace.id,
+      actorId: userId,
+      actorType: "user",
+      action: AuditActions.WORKSPACE_CREATED,
+      resourceType: "workspace",
+      resourceId: workspace.id,
+      metadata: {
+        name: workspace.name,
+        slug: workspace.slug,
+        plan: workspace.plan,
+      },
+    });
+
     logger.info(
       {
         userId,
         workspaceId: workspace.id,
         workspaceSlug: workspace.slug,
+        hasStripeCustomer: !!stripeCustomerId,
       },
       "Workspace created"
     );
@@ -178,6 +221,19 @@ export class WorkspaceService {
       ...(settings && { settings }),
     });
 
+    // Audit log
+    auditService.log({
+      workspaceId,
+      actorType: "user",
+      action: AuditActions.WORKSPACE_UPDATED,
+      resourceType: "workspace",
+      resourceId: workspaceId,
+      metadata: {
+        updatedFields: Object.keys(data),
+        ...(name && { newName: name }),
+      },
+    });
+
     logger.info(
       {
         workspaceId,
@@ -221,6 +277,20 @@ export class WorkspaceService {
 
     // Soft delete workspace
     await workspaceRepository.softDelete(workspaceId);
+
+    // Audit log
+    auditService.log({
+      workspaceId,
+      actorId: userId,
+      actorType: "user",
+      action: AuditActions.WORKSPACE_DELETED,
+      resourceType: "workspace",
+      resourceId: workspaceId,
+      metadata: {
+        name: workspace.name,
+        slug: workspace.slug,
+      },
+    });
 
     logger.info(
       {

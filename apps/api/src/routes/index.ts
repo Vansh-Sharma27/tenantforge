@@ -1,8 +1,10 @@
 import { Router, Request, Response } from "express";
 
 import authRoutes from "./auth.routes";
+import billingRoutes from "./billing.routes";
 import invitationRoutes from "./invitation.routes";
 import memberRoutes from "./member.routes";
+import webhookRoutes from "./webhook.routes";
 import workspaceRoutes from "./workspace.routes";
 
 const router: Router = Router();
@@ -22,7 +24,9 @@ router.get("/health", (_req: Request, res: Response) => {
 // API v1 routes
 router.use("/api/v1/auth", authRoutes);
 router.use("/api/v1/workspaces", workspaceRoutes);
+router.use("/api/v1/workspaces/:slug/billing", billingRoutes);
 router.use("/api/v1/workspaces", memberRoutes);
+router.use("/api/v1/webhooks", webhookRoutes);
 router.use("/api/v1", invitationRoutes);
 // router.use('/api/v1/users', userRoutes);
 

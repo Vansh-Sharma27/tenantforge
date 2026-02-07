@@ -7,6 +7,8 @@ import type {
   ForgotPasswordInput,
   ResetPasswordInput,
 } from "@/schemas/auth.schema";
+import { auditService } from "@/services/audit.service";
+import { AuditActions } from "@/types/audit.types";
 import { AppError } from "@/utils/errors";
 import {
   generateAccessToken,
@@ -47,6 +49,16 @@ export class AuthService {
     // Generate email verification token
     const verificationToken = generateRandomToken(32);
     await userRepository.createEmailVerificationToken(user.id, verificationToken);
+
+    // Audit log
+    auditService.log({
+      actorId: user.id,
+      actorType: "user",
+      action: AuditActions.USER_REGISTERED,
+      resourceType: "user",
+      resourceId: user.id,
+      metadata: { email: user.email },
+    });
 
     // TODO: Queue email sending (Sprint 4)
     logger.info(
@@ -91,12 +103,29 @@ export class AuthService {
     // Find user by email
     const user = await userRepository.findByEmail(email);
     if (!user || !user.password) {
+      // Audit failed login attempt
+      auditService.log({
+        actorType: "user",
+        action: AuditActions.USER_LOGIN_FAILED,
+        metadata: { email, reason: "user_not_found" },
+        ipAddress,
+        userAgent,
+      });
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 
     // Verify password
     const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {
+      // Audit failed login attempt
+      auditService.log({
+        actorId: user.id,
+        actorType: "user",
+        action: AuditActions.USER_LOGIN_FAILED,
+        metadata: { email, reason: "invalid_password" },
+        ipAddress,
+        userAgent,
+      });
       throw new AppError("Invalid credentials", 401, "INVALID_CREDENTIALS");
     }
 
@@ -131,6 +160,17 @@ export class AuthService {
 
     // Update session with actual refresh token
     await userRepository.updateSessionToken(session.id, refreshToken, refreshTokenExpiry);
+
+    // Audit log
+    auditService.log({
+      actorId: user.id,
+      actorType: "user",
+      action: AuditActions.USER_LOGIN,
+      resourceType: "session",
+      resourceId: session.id,
+      ipAddress,
+      userAgent,
+    });
 
     logger.info(
       {

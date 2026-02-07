@@ -40,6 +40,10 @@ const envSchema = z.object({
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+  RATE_LIMIT_GLOBAL_POINTS: z.coerce.number().default(1000),
+  RATE_LIMIT_GLOBAL_DURATION: z.coerce.number().default(60),
+  RATE_LIMIT_AUTH_POINTS: z.coerce.number().default(5),
+  RATE_LIMIT_AUTH_DURATION: z.coerce.number().default(900),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -117,5 +121,13 @@ export const config = {
   rateLimit: {
     windowMs: env.RATE_LIMIT_WINDOW_MS,
     maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
+    global: {
+      points: env.RATE_LIMIT_GLOBAL_POINTS,
+      duration: env.RATE_LIMIT_GLOBAL_DURATION,
+    },
+    auth: {
+      points: env.RATE_LIMIT_AUTH_POINTS,
+      duration: env.RATE_LIMIT_AUTH_DURATION,
+    },
   },
 } as const;

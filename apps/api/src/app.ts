@@ -3,8 +3,10 @@ import express, { Express } from "express";
 import helmet from "helmet";
 
 import { config } from "@/config";
+import { auditMiddleware } from "@/middleware/audit.middleware";
 import { errorMiddleware, notFoundMiddleware } from "@/middleware/error.middleware";
 import { requestIdMiddleware, httpLoggerMiddleware } from "@/middleware/logger.middleware";
+import { globalRateLimit } from "@/middleware/rate-limit.middleware";
 import routes from "@/routes";
 
 export function createApp(): Express {
@@ -32,7 +34,13 @@ export function createApp(): Express {
   // Request logging
   app.use(httpLoggerMiddleware);
 
-  // Body parsing
+  // Audit context middleware
+  app.use(auditMiddleware);
+
+  // Global rate limiting (applied to all routes)
+  app.use(globalRateLimit);
+
+  // Body parsing (Note: Webhooks use raw body, configured separately in webhook.routes.ts)
   app.use(express.json({ limit: "100kb" }));
   app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 
