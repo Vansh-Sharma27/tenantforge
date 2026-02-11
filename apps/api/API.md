@@ -1,6 +1,6 @@
 # TenantForge API Documentation
 
-**Version**: v0.4.0
+**Version**: v0.5.0
 **Base URL**: `http://localhost:3001/api/v1`
 
 ---
@@ -86,6 +86,49 @@ Authenticate with email and password.
 }
 ```
 
+### Refresh Token
+
+**POST** `/auth/refresh`
+
+**Request:**
+
+```json
+{
+  "refreshToken": "eyJhbGc..."
+}
+```
+
+**Response:** `200 OK` — returns new access and refresh tokens.
+
+### Forgot Password
+
+**POST** `/auth/forgot-password`
+
+**Request:**
+
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:** `200 OK` — always returns success to prevent user enumeration.
+
+### Reset Password
+
+**POST** `/auth/reset-password`
+
+**Request:**
+
+```json
+{
+  "token": "reset_token_from_email",
+  "password": "NewSecurePass123!"
+}
+```
+
+**Response:** `200 OK`
+
 ---
 
 ## Workspaces
@@ -103,9 +146,11 @@ Create a new workspace. Creator becomes OWNER.
 ```json
 {
   "name": "Acme Corp",
-  "slug": "acme-corp" // optional, auto-generated from name
+  "slug": "acme-corp"
 }
 ```
+
+`slug` is optional — auto-generated from name if omitted.
 
 **Response:** `201 Created`
 
@@ -142,12 +187,14 @@ List all workspaces user belongs to.
   "success": true,
   "data": [
     {
-      "id": "ws_123",
-      "name": "Acme Corp",
-      "slug": "acme-corp",
-      "plan": "FREE",
+      "workspace": {
+        "id": "ws_123",
+        "name": "Acme Corp",
+        "slug": "acme-corp",
+        "plan": "FREE"
+      },
       "role": "OWNER",
-      "memberCount": 5
+      "joinedAt": "2026-02-05T10:30:00Z"
     }
   ],
   "meta": {
@@ -180,7 +227,11 @@ Get workspace details.
     "slug": "acme-corp",
     "plan": "FREE",
     "memberCount": 5,
-    "settings": {}
+    "settings": {},
+    "membership": {
+      "role": "OWNER",
+      "joinedAt": "2026-02-05T10:30:00Z"
+    }
   }
 }
 ```
@@ -241,9 +292,11 @@ Invite user to workspace via email.
 ```json
 {
   "email": "newmember@example.com",
-  "role": "MEMBER" // ADMIN, MEMBER, or VIEWER
+  "role": "MEMBER"
 }
 ```
+
+Role options: `ADMIN`, `MEMBER`, `VIEWER`
 
 **Response:** `201 Created`
 
@@ -262,14 +315,12 @@ Invite user to workspace via email.
 
 **Errors:**
 
-- `409 Conflict` - User already member or invitation pending
-- `403 Forbidden` - Insufficient permissions
+- `409 Conflict` — User already member or invitation pending
+- `403 Forbidden` — Insufficient permissions
 
 ### List Pending Invitations
 
 **GET** `/workspaces/:slug/invitations`
-
-List pending invitations for workspace.
 
 **Auth**: Required (ADMIN or OWNER)
 
@@ -299,8 +350,6 @@ List pending invitations for workspace.
 
 **DELETE** `/workspaces/:slug/invitations/:id`
 
-Revoke a pending invitation.
-
 **Auth**: Required (ADMIN or OWNER)
 
 **Response:** `200 OK`
@@ -308,8 +357,6 @@ Revoke a pending invitation.
 ### Get Invitation Details
 
 **GET** `/invitations/:token`
-
-Get invitation details (for registration flow).
 
 **Auth**: Optional
 
@@ -333,16 +380,9 @@ Get invitation details (for registration flow).
 }
 ```
 
-**Errors:**
-
-- `404 Not Found` - Invalid token
-- `400 Bad Request` - Expired token
-
 ### Accept Invitation
 
 **POST** `/invitations/:token/accept`
-
-Accept workspace invitation.
 
 **Auth**: Optional (creates membership for authenticated users)
 
@@ -381,11 +421,6 @@ Accept workspace invitation.
 }
 ```
 
-**Errors:**
-
-- `400 Bad Request` - Expired, revoked, or already accepted
-- `409 Conflict` - Already workspace member
-
 ---
 
 ## Members
@@ -394,16 +429,14 @@ Accept workspace invitation.
 
 **GET** `/workspaces/:slug/members?page=1&limit=20&search=john&role=MEMBER`
 
-List workspace members.
-
 **Auth**: Required (any member)
 
 **Query Parameters:**
 
 - `page` (number, default: 1)
 - `limit` (number, default: 20, max: 100)
-- `search` (string, optional) - search name or email
-- `role` (string, optional) - filter by role
+- `search` (string, optional) — search name or email
+- `role` (string, optional) — filter by role
 
 **Response:** `200 OK`
 
@@ -438,19 +471,15 @@ List workspace members.
 
 **PATCH** `/workspaces/:slug/members/:id`
 
-Update member's role.
-
 **Auth**: Required (ADMIN or OWNER)
 
 **Request:**
 
 ```json
 {
-  "role": "ADMIN" // ADMIN, MEMBER, or VIEWER
+  "role": "ADMIN"
 }
 ```
-
-**Response:** `200 OK`
 
 **Rules:**
 
@@ -459,29 +488,16 @@ Update member's role.
 - ADMIN cannot modify other ADMINs
 - Cannot change OWNER role (use transfer endpoint)
 
-**Errors:**
-
-- `403 Forbidden` - Insufficient permissions or rule violation
-- `404 Not Found` - Member not found
-
 ### Remove Member
 
 **DELETE** `/workspaces/:slug/members/:id`
 
-Remove member from workspace.
-
 **Auth**: Required (ADMIN or OWNER)
-
-**Response:** `200 OK`
 
 **Rules:**
 
 - Cannot remove OWNER
 - ADMIN cannot remove other ADMINs
-
-**Errors:**
-
-- `403 Forbidden` - Insufficient permissions or rule violation
 
 ### Leave Workspace
 
@@ -491,11 +507,9 @@ Leave workspace (any member except OWNER).
 
 **Auth**: Required
 
-**Response:** `200 OK`
-
 **Errors:**
 
-- `403 Forbidden` - OWNER cannot leave (must transfer first)
+- `403 Forbidden` — OWNER cannot leave (must transfer first)
 
 ### Transfer Ownership
 
@@ -514,8 +528,6 @@ Transfer workspace ownership to another member.
 }
 ```
 
-**Response:** `200 OK`
-
 **Process:**
 
 - Verifies current owner's password
@@ -523,17 +535,120 @@ Transfer workspace ownership to another member.
 - Current owner becomes ADMIN
 - Both parties receive email notification
 
+---
+
+## Billing
+
+### Get Billing Info
+
+**GET** `/workspaces/:slug/billing`
+
+Get workspace billing and subscription status.
+
+**Auth**: Required (ADMIN or OWNER)
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "plan": "FREE",
+    "subscription": null,
+    "hasStripeCustomer": false
+  }
+}
+```
+
+With active subscription:
+
+```json
+{
+  "success": true,
+  "data": {
+    "plan": "PRO",
+    "subscription": {
+      "status": "active",
+      "currentPeriodEnd": "2026-03-11T00:00:00Z",
+      "cancelAtPeriodEnd": false
+    },
+    "hasStripeCustomer": true
+  }
+}
+```
+
+### Create Checkout Session
+
+**POST** `/workspaces/:slug/billing/checkout`
+
+Create a Stripe Checkout session for subscription upgrade.
+
+**Auth**: Required (OWNER only)
+
+**Request:**
+
+```json
+{
+  "plan": "PRO"
+}
+```
+
+Plan options: `PRO`, `ENTERPRISE`
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "checkoutUrl": "https://checkout.stripe.com/c/pay/..."
+  }
+}
+```
+
 **Errors:**
 
-- `401 Unauthorized` - Invalid password
-- `403 Forbidden` - Not OWNER
-- `404 Not Found` - Target not workspace member
+- `400 Bad Request` — Stripe price not configured or workspace not set up for billing
+
+### Create Portal Session
+
+**POST** `/workspaces/:slug/billing/portal`
+
+Create a Stripe Customer Portal session for self-service subscription management.
+
+**Auth**: Required (OWNER only)
+
+**Response:** `200 OK`
+
+```json
+{
+  "success": true,
+  "data": {
+    "portalUrl": "https://billing.stripe.com/p/session/..."
+  }
+}
+```
+
+### Stripe Webhooks
+
+**POST** `/webhooks/stripe`
+
+Handles Stripe webhook events. Requires webhook signature verification.
+
+**Auth**: Stripe signature (`Stripe-Signature` header)
+
+**Handled Events:**
+
+- `checkout.session.completed` — Activates subscription
+- `customer.subscription.updated` — Syncs plan changes
+- `customer.subscription.deleted` — Downgrades to FREE
+- `invoice.payment_failed` — Logs payment failure
 
 ---
 
 ## Error Responses
 
-All errors follow RFC 7807 Problem Details format:
+All errors follow a consistent format:
 
 ```json
 {
@@ -545,12 +660,13 @@ All errors follow RFC 7807 Problem Details format:
 
 ### Common Status Codes
 
-- `400 Bad Request` - Invalid input or business rule violation
-- `401 Unauthorized` - Missing or invalid authentication
-- `403 Forbidden` - Insufficient permissions
-- `404 Not Found` - Resource not found or user not member
-- `409 Conflict` - Resource conflict (duplicate email, etc.)
-- `500 Internal Server Error` - Server error
+- `400 Bad Request` — Invalid input or business rule violation
+- `401 Unauthorized` — Missing or invalid authentication
+- `403 Forbidden` — Insufficient permissions
+- `404 Not Found` — Resource not found or user not member
+- `409 Conflict` — Resource conflict (duplicate email, etc.)
+- `429 Too Many Requests` — Rate limit exceeded
+- `500 Internal Server Error` — Server error
 
 ---
 
@@ -558,43 +674,21 @@ All errors follow RFC 7807 Problem Details format:
 
 Rate limits apply per IP address:
 
-- Authentication endpoints: 5 requests/15 minutes
-- Other endpoints: 100 requests/minute
+| Scope                  | Limit              | Window     |
+| ---------------------- | ------------------ | ---------- |
+| Global                 | 1,000 requests     | 1 minute   |
+| Auth endpoints         | 5 requests         | 15 minutes |
+| Workspace (FREE)       | 1,000 requests     | 1 day      |
+| Workspace (PRO)        | 50,000 requests    | 1 day      |
+| Workspace (ENTERPRISE) | 1,000,000 requests | 1 day      |
 
 Headers returned:
 
-- `X-RateLimit-Limit` - Request limit
-- `X-RateLimit-Remaining` - Remaining requests
-- `X-RateLimit-Reset` - Reset timestamp
-
----
-
-## Testing
-
-Use tools like cURL, Postman, or Thunder Client:
-
-**Example: Create workspace with authentication**
-
-```bash
-# 1. Register
-curl -X POST http://localhost:3001/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"SecurePass123!","name":"Test User"}'
-
-# 2. Create workspace (use access token from step 1)
-curl -X POST http://localhost:3001/api/v1/workspaces \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <access_token>" \
-  -d '{"name":"My Company"}'
-
-# 3. Invite member
-curl -X POST http://localhost:3001/api/v1/workspaces/my-company/invitations \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <access_token>" \
-  -d '{"email":"member@example.com","role":"MEMBER"}'
-```
+- `X-RateLimit-Limit` — Request limit
+- `X-RateLimit-Remaining` — Remaining requests
+- `X-RateLimit-Reset` — Reset timestamp
 
 ---
 
 _Last Updated: February 2026_
-_API Version: v0.4.0_
+_API Version: v0.5.0_

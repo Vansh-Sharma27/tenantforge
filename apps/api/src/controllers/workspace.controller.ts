@@ -112,7 +112,10 @@ export class WorkspaceController {
 
       res.status(200).json({
         success: true,
-        data: result,
+        data: {
+          ...result,
+          membership: req.membership,
+        },
         meta: {
           requestId: res.locals.requestId,
           timestamp: new Date().toISOString(),

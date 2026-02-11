@@ -8,6 +8,7 @@ import type {
   ResetPasswordInput,
 } from "@/schemas/auth.schema";
 import { auditService } from "@/services/audit.service";
+import { emailService } from "@/services/email.service";
 import { AuditActions } from "@/types/audit.types";
 import { AppError } from "@/utils/errors";
 import {
@@ -60,12 +61,13 @@ export class AuthService {
       metadata: { email: user.email },
     });
 
-    // TODO: Queue email sending (Sprint 4)
+    // Queue verification email
+    await emailService.sendVerificationEmail(user.email, verificationToken);
+
     logger.info(
       {
         userId: user.id,
         email: user.email,
-        verificationToken,
       },
       "User registered - verification email queued"
     );
@@ -272,11 +274,12 @@ export class AuthService {
     // Create password reset record (fails silently if user doesn't exist)
     await userRepository.createPasswordResetToken(email, resetToken);
 
-    // TODO: Queue password reset email (Sprint 4)
+    // Queue password reset email
+    await emailService.sendPasswordResetEmail(email, resetToken);
+
     logger.info(
       {
         email,
-        resetToken,
       },
       "Password reset requested"
     );

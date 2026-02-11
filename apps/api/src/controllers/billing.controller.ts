@@ -5,6 +5,11 @@ import { createCheckoutSchema } from "@/schemas/billing.schema";
 import { stripeService } from "@/services/stripe.service";
 import { BadRequestError } from "@/utils/errors";
 
+const PLAN_PRICE_MAP: Record<string, string | undefined> = {
+  PRO: config.stripe.priceIds.pro,
+  ENTERPRISE: config.stripe.priceIds.enterprise,
+};
+
 export class BillingController {
   /**
    * POST /api/v1/workspaces/:slug/billing/checkout
@@ -12,8 +17,13 @@ export class BillingController {
    */
   async createCheckoutSession(req: Request, res: Response, next: NextFunction) {
     try {
-      const { priceId } = createCheckoutSchema.parse(req.body);
+      const { plan } = createCheckoutSchema.parse(req.body);
       const workspace = req.workspace!;
+
+      const priceId = PLAN_PRICE_MAP[plan];
+      if (!priceId) {
+        throw new BadRequestError(`Stripe price not configured for ${plan} plan`);
+      }
 
       // Verify workspace has Stripe customer
       if (!workspace.stripeCustomerId) {
@@ -26,8 +36,8 @@ export class BillingController {
         priceId,
         workspaceId: workspace.id,
         workspaceSlug: workspace.slug,
-        successUrl: `${config.frontend.url}/workspaces/${workspace.slug}/billing?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${config.frontend.url}/workspaces/${workspace.slug}/billing`,
+        successUrl: `${config.frontend.url}/w/${workspace.slug}/billing?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${config.frontend.url}/w/${workspace.slug}/billing`,
       });
 
       res.status(200).json({
@@ -61,7 +71,7 @@ export class BillingController {
       // Create portal session
       const session = await stripeService.createPortalSession(
         workspace.stripeCustomerId,
-        `${config.frontend.url}/workspaces/${workspace.slug}/billing`
+        `${config.frontend.url}/w/${workspace.slug}/billing`
       );
 
       res.status(200).json({

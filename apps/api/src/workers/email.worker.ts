@@ -6,7 +6,9 @@ import { config } from "@/config";
 import type { EmailJobData } from "@/lib/queue";
 import { generateInvitationEmail } from "@/templates/invitation";
 import { generateMemberRemovedEmail } from "@/templates/member-removed";
+import { generatePasswordResetEmail } from "@/templates/password-reset";
 import { generateRoleChangedEmail } from "@/templates/role-changed";
+import { generateVerificationEmail } from "@/templates/verification";
 import { generateWelcomeEmail } from "@/templates/welcome";
 import { logger } from "@/utils/logger";
 
@@ -74,10 +76,16 @@ async function processEmailJob(job: Job<EmailJobData>) {
       break;
 
     case "VERIFICATION":
+      emailContent = generateVerificationEmail({
+        verificationUrl: data.verificationUrl,
+      });
+      break;
+
     case "PASSWORD_RESET":
-      // TODO: Implement verification and password reset templates
-      logger.warn({ type }, "Email template not yet implemented");
-      return;
+      emailContent = generatePasswordResetEmail({
+        resetUrl: data.resetUrl,
+      });
+      break;
 
     default:
       throw new Error(`Unknown email type: ${type}`);

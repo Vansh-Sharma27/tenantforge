@@ -28,7 +28,10 @@ const envSchema = z.object({
   // Email (optional in development)
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().email().optional(),
-  EMAIL_ENABLED: z.coerce.boolean().default(false),
+  EMAIL_ENABLED: z
+    .string()
+    .default("false")
+    .transform((val) => val === "true" || val === "1"),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
 
   // OAuth (optional)

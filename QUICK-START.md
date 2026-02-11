@@ -1,78 +1,91 @@
-# TenantForge - Quick Start Guide
+# TenantForge — Quick Start Guide
 
-## Current Status
+**Version**: v0.6.0-beta
+**Status**: Sprints 1-5 Complete, Sprint 6 (Frontend) In Progress
 
-**Version**: v0.5.0
-**Sprint Status**: Sprint 5 Complete (Billing & Admin)
-**Next Sprint**: Sprint 6 - UI Polish & Launch
-
-### Completed Features
-
-- Foundation (Monorepo, Docker, Prisma)
-- Authentication (JWT, email verification, password reset)
-- Multi-Tenancy (workspace isolation, RBAC)
-- Team Management (invitations, roles, ownership transfer)
-- Billing (Stripe subscriptions, checkout, portal)
-- Audit Logging & Rate Limiting
-
-## Getting Started
-
-### Prerequisites
+## Prerequisites
 
 - Node.js 20+
 - pnpm 8+
 - Docker & Docker Compose
-- Stripe account (for billing features)
+- Stripe account (optional, for billing features)
+- Resend account (optional, for email delivery)
 
-### 1. Clone and Setup
+## 1. Clone and Setup
 
 ```bash
-git clone https://github.com/yourusername/tenantforge.git
+git clone https://github.com/Vansh-Sharma27/tenantforge.git
 cd tenantforge
 
-# Copy environment variables
+# Copy environment template
 cp .env.example .env
 
-# Edit .env with your Stripe keys and other config
+# Edit .env with your keys (see Environment Variables below)
 nano .env
+
+# Install dependencies
+pnpm install
 ```
 
-### 2. Start with Docker (Recommended)
+## 2. Start Infrastructure
 
 ```bash
-# Start all services
-cd docker
-docker compose up -d
+# Start PostgreSQL and Redis containers
+docker compose -f docker/docker-compose.yml up db redis -d
 
-# Run database migrations (inside API container)
-docker exec tenantforge-api npx prisma migrate deploy
-
-# Check health
-curl http://localhost:3001/health
+# Push database schema
+pnpm db:push
 ```
 
-### 3. Access the Application
+## 3. Start Development Servers
 
-- **API**: http://localhost:3001
-- **Health Check**: http://localhost:3001/health
-- **Web** (Sprint 6): http://localhost:3000
+```bash
+# Start both API and frontend
+pnpm dev
+```
+
+Or start them individually:
+
+```bash
+# Terminal 1 — API server (port 3001)
+pnpm dev:api
+
+# Terminal 2 — Next.js frontend (port 3000)
+pnpm dev:web
+```
+
+## 4. Production Build
+
+```bash
+# Build all packages
+pnpm build
+
+# Start API (requires env vars in shell)
+cd apps/api && node dist/index.js
+
+# Start frontend
+cd apps/web && npx next start
+```
+
+> **Note**: In production the API reads environment variables from the shell (no dotenv). Make sure all required variables are exported or set via your deployment platform.
+
+## 5. Access the Application
+
+| Service       | URL                          |
+| ------------- | ---------------------------- |
+| Frontend      | http://localhost:3000        |
+| API           | http://localhost:3001        |
+| Health Check  | http://localhost:3001/health |
+| Prisma Studio | `pnpm db:studio` (port 5555) |
 
 ## Testing the API
 
-### Register a User
+### Register
 
 ```bash
-cat > /tmp/register.json << 'EOF'
-{
-  "email": "test@example.com",
-  "password": "SecurePass123!",
-  "name": "Test User"
-}
-EOF
-
 curl -X POST http://localhost:3001/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d @/tmp/register.json
+  -d '{"email": "test@example.com", "password": "SecurePass123!", "name": "Test User"}'
 ```
 
 ### Login
@@ -86,25 +99,26 @@ curl -X POST http://localhost:3001/api/v1/auth/login \
 ### Create a Workspace
 
 ```bash
-# Replace <TOKEN> with your access token from login
 curl -X POST http://localhost:3001/api/v1/workspaces \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <TOKEN>" \
   -d '{"name": "My Company"}'
 ```
 
-### Test Billing
+### Get Billing Info
 
 ```bash
-# Get billing info
 curl -H "Authorization: Bearer <TOKEN>" \
   http://localhost:3001/api/v1/workspaces/<SLUG>/billing
+```
 
-# Create checkout session
+### Create Checkout Session
+
+```bash
 curl -X POST http://localhost:3001/api/v1/workspaces/<SLUG>/billing/checkout \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <TOKEN>" \
-  -d '{"priceId": "price_xxx"}'
+  -d '{"plan": "PRO"}'
 ```
 
 ## Available Commands
@@ -112,26 +126,34 @@ curl -X POST http://localhost:3001/api/v1/workspaces/<SLUG>/billing/checkout \
 ### Development
 
 ```bash
-pnpm dev              # Start all services
+pnpm dev              # Start all services (API + frontend)
 pnpm dev:api          # Start API only
-pnpm dev:web          # Start web only
+pnpm dev:web          # Start frontend only
+```
+
+### Build
+
+```bash
+pnpm build            # Build all packages
 ```
 
 ### Database
 
 ```bash
-pnpm db:generate      # Generate Prisma client
-pnpm db:migrate       # Run migrations
-pnpm db:push          # Push schema (dev only)
+pnpm db:push          # Push schema changes (development)
+pnpm db:migrate       # Run migrations (production)
 pnpm db:studio        # Open Prisma Studio
+pnpm db:generate      # Regenerate Prisma client
 ```
 
-### Testing
+### Testing & Linting
 
 ```bash
 pnpm test             # Run all tests
 pnpm test:coverage    # Test with coverage
 pnpm lint             # Check linting
+pnpm lint:fix         # Auto-fix lint issues
+pnpm format           # Format code with Prettier
 ```
 
 ## Environment Variables
@@ -148,18 +170,30 @@ REDIS_URL=redis://localhost:6379
 # JWT (generate with: openssl rand -base64 64)
 JWT_SECRET=your-secret-key
 JWT_REFRESH_SECRET=your-refresh-secret
+```
 
-# Stripe (from dashboard.stripe.com)
+Optional (enable as needed):
+
+```bash
+# Email (resend.com)
+RESEND_API_KEY=re_xxx
+EMAIL_FROM=noreply@yourdomain.com
+EMAIL_ENABLED=true
+
+# Stripe (dashboard.stripe.com)
 STRIPE_SECRET_KEY=sk_test_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 STRIPE_PRICE_PRO=price_xxx
 STRIPE_PRICE_ENTERPRISE=price_xxx
 
-# Email (from resend.com)
-RESEND_API_KEY=re_xxx
-EMAIL_FROM=noreply@yourdomain.com
-EMAIL_ENABLED=false
+# OAuth (optional)
+GITHUB_CLIENT_ID=xxx
+GITHUB_CLIENT_SECRET=xxx
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
 ```
+
+See `.env.example` for the complete list.
 
 ## Project Structure
 
@@ -168,96 +202,79 @@ tenantforge/
 ├── apps/
 │   ├── api/                 # Express.js API
 │   │   ├── src/
+│   │   │   ├── config/      # Environment config
 │   │   │   ├── controllers/ # Request handlers
 │   │   │   ├── services/    # Business logic
 │   │   │   ├── routes/      # API routes
-│   │   │   ├── middleware/  # Auth, RBAC, rate limiting
-│   │   │   └── config/      # Configuration
+│   │   │   ├── middleware/  # Auth, RBAC, rate limiting, tenant
+│   │   │   ├── schemas/     # Zod validation
+│   │   │   ├── templates/   # Email templates
+│   │   │   └── workers/     # BullMQ job processors
 │   │   └── prisma/          # Database schema
-│   └── web/                 # Next.js frontend (Sprint 6)
-├── packages/
-│   └── shared/              # Shared types & constants
+│   │
+│   └── web/                 # Next.js 14 frontend
+│       └── src/
+│           ├── app/(public)/ # Public pages (landing, auth)
+│           ├── app/(app)/    # Protected pages (dashboard, workspace)
+│           ├── components/   # Reusable components
+│           ├── hooks/        # React Query hooks
+│           ├── stores/       # Zustand stores
+│           └── lib/          # API client, utilities
+│
+├── packages/shared/         # Shared types & constants
 └── docker/                  # Docker configuration
 ```
 
-## API Endpoints
-
-### Authentication
-
-- `POST /api/v1/auth/register` - Register user
-- `POST /api/v1/auth/login` - Login
-- `POST /api/v1/auth/refresh` - Refresh token
-- `POST /api/v1/auth/forgot-password` - Request reset
-- `POST /api/v1/auth/reset-password` - Reset password
-
-### Workspaces
-
-- `POST /api/v1/workspaces` - Create workspace
-- `GET /api/v1/workspaces` - List workspaces
-- `GET /api/v1/workspaces/:slug` - Get workspace
-- `PATCH /api/v1/workspaces/:slug` - Update workspace
-- `DELETE /api/v1/workspaces/:slug` - Delete workspace
-
-### Members
-
-- `GET /api/v1/workspaces/:slug/members` - List members
-- `PATCH /api/v1/workspaces/:slug/members/:id` - Update role
-- `DELETE /api/v1/workspaces/:slug/members/:id` - Remove member
-- `POST /api/v1/workspaces/:slug/leave` - Leave workspace
-- `POST /api/v1/workspaces/:slug/transfer` - Transfer ownership
-
-### Invitations
-
-- `POST /api/v1/workspaces/:slug/invitations` - Send invite
-- `GET /api/v1/workspaces/:slug/invitations` - List invites
-- `POST /api/v1/invitations/:token/accept` - Accept invite
-
-### Billing
-
-- `GET /api/v1/workspaces/:slug/billing` - Get billing info
-- `POST /api/v1/workspaces/:slug/billing/checkout` - Create checkout
-- `POST /api/v1/workspaces/:slug/billing/portal` - Create portal
-
 ## Troubleshooting
 
-### Docker Issues
+### Port already in use
 
 ```bash
-# Restart containers
-cd docker
-docker compose down
-docker compose up -d
-
-# Check logs
-docker logs tenantforge-api --tail 50
+# Find and kill process on a port
+fuser -k 3000/tcp  # frontend
+fuser -k 3001/tcp  # API
 ```
 
-### Database Issues
+### Database connection issues
 
 ```bash
-# Run migrations
-docker exec tenantforge-api npx prisma migrate deploy
+# Check Docker containers are running
+docker compose -f docker/docker-compose.yml ps
 
-# Reset database (dev only)
-docker exec tenantforge-api npx prisma migrate reset
+# Restart infrastructure
+docker compose -f docker/docker-compose.yml down
+docker compose -f docker/docker-compose.yml up db redis -d
 ```
 
-### Prisma Client Issues
+### Prisma client issues
 
 ```bash
-# Regenerate client
-docker exec tenantforge-api npx prisma generate
+pnpm db:generate
+```
+
+### API env vars not loading
+
+The API does not use dotenv. For local development, ensure your `.env` variables are loaded:
+
+```bash
+# Option 1: Use pnpm dev (handles it via tsx)
+pnpm dev:api
+
+# Option 2: Source manually then run
+set -a && source apps/api/.env && set +a
+cd apps/api && npx tsx watch src/index.ts
 ```
 
 ## Documentation
 
-- `README.md` - Full documentation
-- `SPRINT-5-SUMMARY.md` - Latest sprint details
-- `apps/api/API.md` - API documentation
-- `.env.example` - All configuration options
+| File              | Description                              |
+| ----------------- | ---------------------------------------- |
+| `README.md`       | Full project documentation               |
+| `QUICK-START.md`  | This guide                               |
+| `apps/api/API.md` | Detailed API documentation with examples |
+| `.env.example`    | All configuration options                |
 
 ---
 
-**Version**: v0.5.0
-**Status**: Sprint 5 Complete
-**Next**: Sprint 6 - UI Polish & Launch
+**Version**: v0.6.0-beta
+**Status**: Sprint 6 In Progress

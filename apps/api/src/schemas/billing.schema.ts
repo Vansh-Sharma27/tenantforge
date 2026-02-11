@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Body schemas
 export const createCheckoutSchema = z.object({
-  priceId: z.string().min(1, "Price ID is required"),
+  plan: z.enum(["PRO", "ENTERPRISE"]),
 });
 
 export const createPortalSchema = z.object({});
