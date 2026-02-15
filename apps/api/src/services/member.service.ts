@@ -1,5 +1,6 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 
+import { prisma } from "@/lib/prisma";
 import { membershipRepository } from "@/repositories/membership.repository";
 import { userRepository } from "@/repositories/user.repository";
 import { auditService } from "@/services/audit.service";
@@ -9,8 +10,6 @@ import { ROLE_HIERARCHY } from "@/types/workspace.types";
 import { ForbiddenError, NotFoundError, UnauthorizedError, BadRequestError } from "@/utils/errors";
 import { logger } from "@/utils/logger";
 import { verifyPassword } from "@/utils/password";
-
-const prisma = new PrismaClient();
 
 /**
  * Options for listing members

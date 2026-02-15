@@ -1,6 +1,6 @@
-import { PrismaClient, Workspace, Plan } from "@prisma/client";
+import { Workspace, Plan } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 /**
  * Workspace repository for database operations

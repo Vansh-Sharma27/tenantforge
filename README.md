@@ -48,19 +48,32 @@ TenantForge gives you a fully wired backend and a working frontend so you can fo
    pnpm install
    ```
 
+   > **Note for pnpm 10+ users**: If prompted about ignored build scripts, run:
+   >
+   > ```bash
+   > pnpm approve-builds
+   > # Select argon2 and any other native dependencies
+   > ```
+
 2. **Start infrastructure**
 
    ```bash
    docker compose -f docker/docker-compose.yml up db redis -d
    ```
 
-3. **Setup database**
+3. **Generate RSA keys** (required for JWT signing)
+
+   ```bash
+   cd apps/api && pnpm generate:keys
+   ```
+
+4. **Setup database**
 
    ```bash
    pnpm db:push
    ```
 
-4. **Start development servers**
+5. **Start development servers**
 
    ```bash
    # Start both API and frontend
@@ -77,7 +90,7 @@ TenantForge gives you a fully wired backend and a working frontend so you can fo
    pnpm dev:web
    ```
 
-5. **Access the application**
+6. **Access the application**
    - **Frontend**: http://localhost:3000
    - **API**: http://localhost:3001
    - **Health Check**: http://localhost:3001/health
@@ -88,8 +101,8 @@ TenantForge gives you a fully wired backend and a working frontend so you can fo
 # Build all packages
 pnpm build
 
-# Start API
-cd apps/api && node dist/index.js
+# Start API (production)
+cd apps/api && pnpm start
 
 # Start frontend
 cd apps/web && npx next start
@@ -138,6 +151,9 @@ tenantforge/
 pnpm dev              # Start all services (API + frontend)
 pnpm dev:api          # Start API only
 pnpm dev:web          # Start frontend only
+
+# Setup
+pnpm generate:keys    # Generate RSA keys for JWT signing (run once)
 
 # Build
 pnpm build            # Build all packages

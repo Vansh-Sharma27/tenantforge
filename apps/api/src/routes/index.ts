@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 
+import auditRoutes from "./audit.routes";
 import authRoutes from "./auth.routes";
 import billingRoutes from "./billing.routes";
 import invitationRoutes from "./invitation.routes";
@@ -25,6 +26,7 @@ router.get("/health", (_req: Request, res: Response) => {
 router.use("/api/v1/auth", authRoutes);
 router.use("/api/v1/workspaces", workspaceRoutes);
 router.use("/api/v1/workspaces/:slug/billing", billingRoutes);
+router.use("/api/v1/workspaces/:slug/audit", auditRoutes);
 router.use("/api/v1/workspaces", memberRoutes);
 router.use("/api/v1/webhooks", webhookRoutes);
 router.use("/api/v1", invitationRoutes);

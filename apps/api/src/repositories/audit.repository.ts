@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
-
+import { prisma } from "@/lib/prisma";
 import { AuditEvent } from "@/types/audit.types";
-
-const prisma = new PrismaClient();
 
 /**
  * Audit log repository for database operations
@@ -19,11 +16,19 @@ export class AuditRepository {
   }
 
   /**
-   * Find audit logs by workspace with pagination
+   * Find audit logs by workspace with pagination and optional filters
    */
-  async findByWorkspace(workspaceId: string, options: { skip: number; take: number }) {
+  async findByWorkspace(
+    workspaceId: string,
+    options: { skip: number; take: number; action?: string }
+  ) {
+    const where: Record<string, unknown> = { workspaceId };
+    if (options.action) {
+      where.action = options.action;
+    }
+
     return prisma.auditLog.findMany({
-      where: { workspaceId },
+      where,
       skip: options.skip,
       take: options.take,
       orderBy: { createdAt: "desc" },
@@ -45,10 +50,12 @@ export class AuditRepository {
   /**
    * Count audit logs by workspace
    */
-  async countByWorkspace(workspaceId: string): Promise<number> {
-    return prisma.auditLog.count({
-      where: { workspaceId },
-    });
+  async countByWorkspace(workspaceId: string, action?: string): Promise<number> {
+    const where: Record<string, unknown> = { workspaceId };
+    if (action) {
+      where.action = action;
+    }
+    return prisma.auditLog.count({ where });
   }
 
   /**

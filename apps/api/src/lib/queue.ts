@@ -13,7 +13,8 @@ export type EmailJobType =
   | "INVITATION"
   | "WELCOME"
   | "ROLE_CHANGED"
-  | "MEMBER_REMOVED";
+  | "MEMBER_REMOVED"
+  | "PAYMENT_FAILED";
 
 export interface EmailJobData {
   type: EmailJobType;

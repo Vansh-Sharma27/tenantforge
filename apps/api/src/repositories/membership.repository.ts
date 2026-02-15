@@ -1,6 +1,6 @@
-import { PrismaClient, Membership, Role } from "@prisma/client";
+import { Membership, Role } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 /**
  * Membership repository for database operations

@@ -1,6 +1,6 @@
-import { PrismaClient, Invitation, InvitationStatus, Role } from "@prisma/client";
+import { Invitation, InvitationStatus, Role } from "@prisma/client";
 
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 /**
  * Invitation repository for database operations

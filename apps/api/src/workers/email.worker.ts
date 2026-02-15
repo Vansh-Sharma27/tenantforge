@@ -7,6 +7,7 @@ import type { EmailJobData } from "@/lib/queue";
 import { generateInvitationEmail } from "@/templates/invitation";
 import { generateMemberRemovedEmail } from "@/templates/member-removed";
 import { generatePasswordResetEmail } from "@/templates/password-reset";
+import { generatePaymentFailedEmail } from "@/templates/payment-failed";
 import { generateRoleChangedEmail } from "@/templates/role-changed";
 import { generateVerificationEmail } from "@/templates/verification";
 import { generateWelcomeEmail } from "@/templates/welcome";
@@ -84,6 +85,14 @@ async function processEmailJob(job: Job<EmailJobData>) {
     case "PASSWORD_RESET":
       emailContent = generatePasswordResetEmail({
         resetUrl: data.resetUrl,
+      });
+      break;
+
+    case "PAYMENT_FAILED":
+      emailContent = generatePaymentFailedEmail({
+        workspaceName: data.workspaceName,
+        billingUrl: data.billingUrl,
+        attemptCount: data.attemptCount,
       });
       break;
 

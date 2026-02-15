@@ -3,9 +3,11 @@ import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
 
 import { config } from "@/config";
+import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { workspaceRepository } from "@/repositories/workspace.repository";
 import { auditService } from "@/services/audit.service";
+import { emailService } from "@/services/email.service";
 import { stripeService } from "@/services/stripe.service";
 import { AuditActions } from "@/types/audit.types";
 import { logger } from "@/utils/logger";
@@ -184,7 +186,20 @@ export class WebhookController {
         },
       });
 
-      // TODO: Send notification to workspace owner
+      // Notify workspace owner about payment failure
+      const owner = await prisma.membership.findFirst({
+        where: { workspaceId: workspace.id, role: "OWNER" },
+        include: { user: { select: { email: true } } },
+      });
+
+      if (owner?.user?.email) {
+        await emailService.sendPaymentFailedEmail(
+          owner.user.email,
+          workspace.name,
+          workspace.slug,
+          invoice.attempt_count || 1
+        );
+      }
     }
   }
 

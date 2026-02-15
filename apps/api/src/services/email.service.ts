@@ -163,6 +163,37 @@ export class EmailService {
       "Password reset email queued"
     );
   }
+
+  /**
+   * Send payment failed notification to workspace owner
+   */
+  async sendPaymentFailedEmail(
+    to: string,
+    workspaceName: string,
+    workspaceSlug: string,
+    attemptCount: number
+  ) {
+    const billingUrl = `${config.frontend.url}/w/${workspaceSlug}/billing`;
+
+    await emailQueue.add("payment-failed", {
+      type: "PAYMENT_FAILED",
+      to,
+      data: {
+        workspaceName,
+        billingUrl,
+        attemptCount,
+      },
+    });
+
+    logger.info(
+      {
+        to,
+        workspaceName,
+        attemptCount,
+      },
+      "Payment failed email queued"
+    );
+  }
 }
 
 export const emailService = new EmailService();
