@@ -26,15 +26,15 @@ export function ShaderBackground() {
       <MeshGradient
         width={dimensions.width}
         height={dimensions.height}
-        colors={["#6ee7b7", "#a7f3d0", "#d1fae5", "#f0fdf4", "#86efac", "#bbf7d0"]}
-        distortion={0.8}
-        swirl={0.4}
+        colors={["#e2e8f0", "#d1fae5", "#f1f5f9", "#ecfdf5", "#f8fafc", "#a7f3d0"]}
+        distortion={0.5}
+        swirl={0.3}
         grainMixer={0}
         grainOverlay={0}
-        speed={0.5}
+        speed={0.3}
         offsetX={0.08}
       />
-      <div className="absolute inset-0 bg-white/30" />
+      <div className="absolute inset-0 bg-white/50" />
     </div>
   );
 }

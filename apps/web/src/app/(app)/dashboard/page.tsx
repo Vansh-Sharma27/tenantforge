@@ -56,10 +56,14 @@ export default function DashboardPage() {
       />
 
       {workspaces?.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-body text-gray-500">No workspaces yet.</p>
-          <p className="mt-1 text-small text-gray-400">
-            Create your first workspace to get started.
+        <div className="text-center py-20 max-w-sm mx-auto">
+          <div className="mx-auto w-14 h-14 bg-accent/10 flex items-center justify-center mb-5">
+            <Plus className="h-6 w-6 text-accent" />
+          </div>
+          <h3 className="text-subtitle text-black">Create your first workspace</h3>
+          <p className="mt-2 text-small text-gray-500 leading-relaxed">
+            Workspaces keep your team&apos;s projects, billing, and permissions separate. Start with
+            one — you can always add more.
           </p>
           <Button
             onClick={() => setShowCreate(true)}

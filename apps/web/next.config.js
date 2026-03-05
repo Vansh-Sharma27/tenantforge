@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@tenantforge/shared"],
+  allowedDevOrigins: ["http://216.81.245.64:3000"],
   async rewrites() {
     return [
       {

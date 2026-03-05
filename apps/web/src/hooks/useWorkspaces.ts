@@ -73,6 +73,7 @@ export function useUpdateWorkspace(slug: string) {
 }
 
 export function useDeleteWorkspace(slug: string) {
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
@@ -81,6 +82,11 @@ export function useDeleteWorkspace(slug: string) {
         data: { password },
       });
       return data;
+    },
+    onSuccess: () => {
+      // Remove stale cache so dashboard fetches fresh data (shows loading, not stale)
+      queryClient.removeQueries({ queryKey: ["workspace", slug] });
+      queryClient.removeQueries({ queryKey: ["workspaces"] });
     },
     onError: (error) => {
       toast("error", getApiError(error));

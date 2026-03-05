@@ -2,7 +2,7 @@
 
 import type { Role } from "@tenantforge/shared";
 import { hasPermission } from "@tenantforge/shared/constants/roles";
-import { UserPlus, Search } from "lucide-react";
+import { UserPlus, Search, Users } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -47,13 +47,14 @@ export default function MembersPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Search members..."
+          placeholder="Search members\u2026"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
           className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-md text-small text-gray-900 placeholder:text-gray-400 focus:border-accent focus:ring-1 focus:ring-accent transition-default"
+          aria-label="Search members"
         />
       </div>
 
@@ -72,8 +73,19 @@ export default function MembersPage() {
         </div>
       ) : data?.data?.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-body text-gray-500">No members found.</p>
-          {search && <p className="mt-1 text-small text-gray-400">Try a different search term.</p>}
+          <div className="mx-auto w-14 h-14 bg-accent/10 flex items-center justify-center mb-5">
+            <Users className="h-6 w-6 text-accent" />
+          </div>
+          <p className="text-body text-gray-900">No members found</p>
+          {search ? (
+            <p className="mt-1 text-small text-gray-500">
+              No results for &ldquo;{search}&rdquo;. Try a different search term.
+            </p>
+          ) : (
+            <p className="mt-1 text-small text-gray-500">
+              Invite team members to start collaborating.
+            </p>
+          )}
         </div>
       ) : (
         <>

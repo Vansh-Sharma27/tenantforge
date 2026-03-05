@@ -25,13 +25,14 @@ export function LoginForm() {
         type="email"
         placeholder="you@example.com"
         autoComplete="email"
+        spellCheck={false}
         error={errors.email?.message}
         {...register("email")}
       />
       <Input
         label="Password"
         type="password"
-        placeholder="Enter your password"
+        placeholder="Enter your password…"
         autoComplete="current-password"
         error={errors.password?.message}
         {...register("password")}

@@ -1,13 +1,12 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 const ShaderBackground = dynamic(
   () => import("@/components/landing/ShaderBackground").then((mod) => mod.ShaderBackground),
-  { ssr: false }
+  { ssr: false, loading: () => null }
 );
 
 /* ─── Eye-tracking primitives ────────────────────────────────── */
@@ -231,7 +230,9 @@ export function AnimatedAuthLayout({
         {/* Logo */}
         <div className="relative z-20">
           <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-            <Sparkles className="size-4" />
+            <div className="h-7 w-7 bg-emerald-500 flex items-center justify-center">
+              <span className="text-white text-xs font-bold">TF</span>
+            </div>
             <span>TenantForge</span>
           </Link>
         </div>
@@ -434,12 +435,7 @@ export function AnimatedAuthLayout({
           <Link href="/" className="hover:text-white transition-colors">
             Home
           </Link>
-          <Link href="#" className="hover:text-white transition-colors">
-            Privacy
-          </Link>
-          <Link href="#" className="hover:text-white transition-colors">
-            Terms
-          </Link>
+          <span className="text-white/20">&copy; {new Date().getFullYear()} TenantForge</span>
         </div>
 
         {/* Background decoration */}
@@ -450,20 +446,26 @@ export function AnimatedAuthLayout({
       </div>
 
       {/* ── Right: Form ── */}
-      <div className="relative z-10 flex items-center justify-center p-8 bg-white/50 backdrop-blur-2xl min-h-screen lg:min-h-0">
+      <div className="relative z-10 flex flex-col items-center justify-center p-8 bg-white/60 backdrop-blur-2xl min-h-screen lg:min-h-0">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 text-lg font-semibold mb-12">
-            <Sparkles className="size-4 text-accent" />
-            <span>TenantForge</span>
+          {/* Mobile logo + accent bar */}
+          <div className="lg:hidden mb-10">
+            <div className="flex items-center justify-center gap-2 text-lg font-semibold">
+              <div className="h-7 w-7 bg-gray-900 flex items-center justify-center">
+                <span className="text-white text-xs font-bold">TF</span>
+              </div>
+              <span>TenantForge</span>
+            </div>
+            <div className="mt-3 mx-auto w-12 h-0.5 bg-accent/40" />
           </div>
 
           <div className="mb-8">
             <Link
               href="/"
-              className="hidden lg:block text-xs uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-default mb-6"
+              className="hidden lg:inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-default mb-6"
             >
-              TenantForge
+              <span>&larr;</span>
+              <span>Back to home</span>
             </Link>
             <h1 className="text-heading text-black">{title}</h1>
             {description && <p className="mt-2 text-body text-gray-500">{description}</p>}
@@ -474,6 +476,13 @@ export function AnimatedAuthLayout({
           </div>
 
           {footer && <div className="mt-6 text-center text-small text-gray-500">{footer}</div>}
+
+          {/* Mobile footer */}
+          <div className="lg:hidden mt-8 text-center">
+            <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-default">
+              &larr; Back to home
+            </Link>
+          </div>
         </div>
       </div>
     </div>

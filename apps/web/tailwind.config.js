@@ -7,7 +7,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "Plus Jakarta Sans", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
       colors: {
@@ -56,7 +56,7 @@ module.exports = {
         md: "4px",
       },
       boxShadow: {
-        sm: "0 1px 2px 0 rgb(0 0 0 / 0.03)",
+        sm: "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 1px 3px 0 rgb(0 0 0 / 0.02)",
       },
       fontSize: {
         display: ["2.25rem", { lineHeight: "1.2", letterSpacing: "-0.025em", fontWeight: "700" }],
@@ -71,6 +71,7 @@ module.exports = {
         "fade-in": "fadeIn 200ms ease-out",
         "slide-up": "slideUp 200ms ease-out",
         "slide-in-right": "slideInRight 200ms ease-out",
+        "toast-exit": "toastExit 200ms ease-in forwards",
       },
       keyframes: {
         fadeIn: {
@@ -84,6 +85,10 @@ module.exports = {
         slideInRight: {
           "0%": { opacity: "0", transform: "translateX(16px)" },
           "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+        toastExit: {
+          "0%": { opacity: "1", transform: "translateX(0)" },
+          "100%": { opacity: "0", transform: "translateX(16px)" },
         },
       },
     },

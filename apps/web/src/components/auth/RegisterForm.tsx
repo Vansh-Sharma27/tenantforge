@@ -37,6 +37,7 @@ export function RegisterForm() {
         type="email"
         placeholder="you@example.com"
         autoComplete="email"
+        spellCheck={false}
         error={errors.email?.message}
         {...register("email")}
       />
@@ -44,7 +45,7 @@ export function RegisterForm() {
         <Input
           label="Password"
           type="password"
-          placeholder="Create a password"
+          placeholder="Create a password…"
           autoComplete="new-password"
           error={errors.password?.message}
           {...register("password")}
@@ -54,7 +55,7 @@ export function RegisterForm() {
       <Input
         label="Confirm Password"
         type="password"
-        placeholder="Confirm your password"
+        placeholder="Confirm your password…"
         autoComplete="new-password"
         error={errors.confirmPassword?.message}
         {...register("confirmPassword")}

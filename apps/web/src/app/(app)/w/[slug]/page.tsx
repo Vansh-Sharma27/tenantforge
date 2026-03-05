@@ -2,7 +2,7 @@
 
 import type { Role } from "@tenantforge/shared";
 import { hasPermission } from "@tenantforge/shared/constants/roles";
-import { Users, Settings, CreditCard, ArrowRight } from "lucide-react";
+import { Users, Settings, CreditCard, ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -37,12 +37,14 @@ export default function WorkspaceDashboardPage() {
 
   const role = data.membership?.role as Role;
 
-  const quickLinks = [
+  const navItems = [
     {
       href: `/w/${slug}/members`,
       label: "Members",
       description: "Manage your team",
       icon: <Users className="h-5 w-5" strokeWidth={1.5} />,
+      stat: data._count?.memberships ?? 0,
+      statLabel: "people",
       show: true,
     },
     {
@@ -69,34 +71,40 @@ export default function WorkspaceDashboardPage() {
         action={<Badge>{data.plan}</Badge>}
       />
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card>
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Members</p>
-          <p className="mt-1 text-display text-black">{data._count?.memberships ?? "—"}</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Plan</p>
-          <p className="mt-1 text-display text-black">{data.plan}</p>
-        </Card>
-        <Card>
-          <p className="text-xs text-gray-500 uppercase tracking-wider">Your Role</p>
-          <p className="mt-1 text-display text-black">{role}</p>
-        </Card>
+      {/* Overview strip */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-8 text-small text-gray-500">
+        <span className="flex items-center gap-1.5">
+          <Users className="h-3.5 w-3.5" strokeWidth={1.5} />
+          {data._count?.memberships ?? 0} members
+        </span>
+        <span className="flex items-center gap-1.5">
+          <CreditCard className="h-3.5 w-3.5" strokeWidth={1.5} />
+          {data.plan} plan
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Shield className="h-3.5 w-3.5" strokeWidth={1.5} />
+          {role}
+        </span>
       </div>
 
-      {/* Quick links */}
-      <h2 className="text-subtitle text-black mb-4">Quick Actions</h2>
+      {/* Navigation cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {quickLinks.map((link) => (
-          <Link key={link.href} href={link.href}>
-            <Card hover className="flex items-center gap-4">
-              <div className="text-gray-500">{link.icon}</div>
-              <div className="flex-1">
-                <p className="text-small font-medium text-black">{link.label}</p>
-                <p className="text-xs text-gray-500">{link.description}</p>
+        {navItems.map((item) => (
+          <Link key={item.href} href={item.href}>
+            <Card hover>
+              <div className="flex items-start justify-between mb-3">
+                <div className="p-2 bg-gray-100 text-gray-600 group-hover:bg-accent/10 group-hover:text-accent transition-colors duration-150">
+                  {item.icon}
+                </div>
+                <ArrowRight className="h-4 w-4 text-gray-300" />
               </div>
-              <ArrowRight className="h-4 w-4 text-gray-300" />
+              <p className="text-small font-medium text-black">{item.label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+              {"stat" in item && item.stat !== undefined && (
+                <p className="mt-3 text-xs text-gray-400">
+                  {item.stat} {item.statLabel}
+                </p>
+              )}
             </Card>
           </Link>
         ))}

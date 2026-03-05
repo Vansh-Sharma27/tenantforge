@@ -120,13 +120,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               key={item.label}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-small transition-default",
+                "flex items-center gap-3 px-3 py-2 rounded-md text-small transition-all duration-150",
                 isActive
-                  ? "bg-white text-black font-medium"
+                  ? "bg-white text-accent font-medium border border-gray-200 shadow-sm"
                   : "text-gray-600 hover:text-black hover:bg-gray-50",
                 collapsed && "justify-center"
               )}
               title={collapsed ? item.label : undefined}
+              aria-current={isActive ? "page" : undefined}
             >
               {item.icon}
               {!collapsed && item.label}

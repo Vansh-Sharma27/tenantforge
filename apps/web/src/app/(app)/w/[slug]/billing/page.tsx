@@ -151,7 +151,7 @@ export default function BillingPage() {
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">{PLAN_DESCRIPTIONS[plan]}</p>
                 <p className="mt-3">
-                  <span className="text-display text-black">${price.monthly}</span>
+                  <span className="text-display text-black tabular-nums">${price.monthly}</span>
                   <span className="text-small text-gray-500">/mo</span>
                 </p>
               </div>

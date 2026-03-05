@@ -19,10 +19,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-accent text-white hover:bg-accent-hover active:bg-emerald-700 focus-visible:ring-accent",
-  secondary: "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 active:bg-gray-100",
-  ghost: "bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100",
-  danger: "bg-red-500 text-white hover:bg-red-600 active:bg-red-700 focus-visible:ring-red-500",
+    "bg-accent text-white hover:bg-accent-hover active:bg-emerald-700 active:scale-[0.98] focus-visible:ring-accent",
+  secondary:
+    "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 active:bg-gray-100 active:scale-[0.98]",
+  ghost:
+    "bg-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 active:bg-gray-200 active:scale-[0.98]",
+  danger:
+    "bg-red-500 text-white hover:bg-red-600 active:bg-red-700 active:scale-[0.98] focus-visible:ring-red-500",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -52,7 +55,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <Comp
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center gap-2 font-medium rounded-md transition-default cursor-pointer select-none",
+          "inline-flex items-center justify-center gap-2 font-medium rounded-md transition-[color,background-color,border-color,transform,box-shadow] duration-150 cursor-pointer select-none",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           variantStyles[variant],
           sizeStyles[size],

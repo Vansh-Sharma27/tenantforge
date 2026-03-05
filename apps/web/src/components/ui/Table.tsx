@@ -7,7 +7,7 @@ interface TableProps {
 
 export function Table({ children, className }: TableProps) {
   return (
-    <div className={cn("w-full overflow-x-auto", className)}>
+    <div className={cn("w-full overflow-x-auto border border-gray-200 bg-white", className)}>
       <table className="w-full text-left">{children}</table>
     </div>
   );
@@ -15,7 +15,7 @@ export function Table({ children, className }: TableProps) {
 
 export function TableHeader({ children }: { children: React.ReactNode }) {
   return (
-    <thead>
+    <thead className="bg-gray-50 sticky top-0">
       <tr className="border-b border-gray-200">{children}</tr>
     </thead>
   );

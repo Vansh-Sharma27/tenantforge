@@ -138,7 +138,7 @@ export default function SettingsPage() {
               loading={deleteWorkspace.isPending}
               onClick={async () => {
                 await deleteWorkspace.mutateAsync(deletePassword);
-                router.push("/dashboard");
+                router.replace("/dashboard");
               }}
             >
               Delete Workspace

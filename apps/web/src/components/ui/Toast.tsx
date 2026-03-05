@@ -11,6 +11,7 @@ interface Toast {
   id: string;
   type: ToastType;
   message: string;
+  exiting?: boolean;
 }
 
 interface ToastContextValue {
@@ -40,28 +41,39 @@ const borderColors: Record<ToastType, string> = {
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((type: ToastType, message: string) => {
-    const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    setToasts((prev) => [...prev.slice(-2), { id, type, message }]);
-
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)));
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    }, 200);
   }, []);
 
-  const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
+  const addToast = useCallback(
+    (type: ToastType, message: string) => {
+      const id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      setToasts((prev) => [...prev.slice(-2), { id, type, message }]);
+
+      setTimeout(() => {
+        removeToast(id);
+      }, 4000);
+    },
+    [removeToast]
+  );
 
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+      <div
+        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm"
+        aria-live="polite"
+        role="status"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
             className={cn(
-              "flex items-center gap-3 bg-white border border-gray-200 border-l-4 px-4 py-3 animate-slide-in-right",
+              "flex items-center gap-3 bg-white border border-gray-200 border-l-4 px-4 py-3 shadow-sm",
+              t.exiting ? "animate-toast-exit" : "animate-slide-in-right",
               borderColors[t.type]
             )}
           >

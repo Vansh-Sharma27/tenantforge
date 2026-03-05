@@ -49,7 +49,7 @@ export function Modal({ open, onClose, title, description, children, className }
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          "relative z-10 w-full max-w-md bg-white border border-gray-200 p-6 animate-fade-in",
+          "relative z-10 w-full max-w-md bg-white border border-gray-200 p-6 animate-fade-in overscroll-contain",
           className
         )}
       >
