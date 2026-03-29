@@ -43,7 +43,7 @@ export default function WorkspaceDashboardPage() {
       label: "Members",
       description: "Manage your team",
       icon: <Users className="h-5 w-5" strokeWidth={1.5} />,
-      stat: data._count?.memberships ?? 0,
+      stat: data.memberCount ?? 0,
       statLabel: "people",
       show: true,
     },
@@ -75,7 +75,7 @@ export default function WorkspaceDashboardPage() {
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-8 text-small text-gray-500">
         <span className="flex items-center gap-1.5">
           <Users className="h-3.5 w-3.5" strokeWidth={1.5} />
-          {data._count?.memberships ?? 0} members
+          {data.memberCount ?? 0} members
         </span>
         <span className="flex items-center gap-1.5">
           <CreditCard className="h-3.5 w-3.5" strokeWidth={1.5} />

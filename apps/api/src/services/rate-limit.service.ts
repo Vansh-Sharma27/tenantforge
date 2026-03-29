@@ -1,9 +1,21 @@
 import { Plan } from "@prisma/client";
-import { RateLimiterRedis } from "rate-limiter-flexible";
+import { RateLimiterRedis, RateLimiterRes } from "rate-limiter-flexible";
 
 import { config } from "@/config";
 import { redis } from "@/lib/redis";
 import { logger } from "@/utils/logger";
+
+export interface RateLimitError {
+  rateLimitExceeded: true;
+  retryAfter: number;
+  remaining: number;
+  reset: Date;
+  limit: number;
+}
+
+export function isRateLimitError(error: unknown): error is RateLimitError {
+  return typeof error === "object" && error !== null && "rateLimitExceeded" in error;
+}
 
 /**
  * Rate limiting service using Redis backend
@@ -66,17 +78,18 @@ export class RateLimitService {
         reset: new Date(Date.now() + result.msBeforeNext),
         limit: limiter.points,
       };
-    } catch (rejRes: any) {
-      // Rate limit exceeded
-      if (rejRes?.msBeforeNext) {
+    } catch (rejRes: unknown) {
+      // Rate limit exceeded (RateLimiterRes has msBeforeNext)
+      if (rejRes instanceof RateLimiterRes && rejRes.msBeforeNext > 0) {
         logger.warn({ key, msBeforeNext: rejRes.msBeforeNext }, "Rate limit exceeded");
-        throw {
+        const rateLimitError: RateLimitError = {
           rateLimitExceeded: true,
           retryAfter: Math.ceil(rejRes.msBeforeNext / 1000),
           remaining: 0,
           reset: new Date(Date.now() + rejRes.msBeforeNext),
           limit: limiter.points,
         };
+        throw rateLimitError;
       }
 
       // Other error

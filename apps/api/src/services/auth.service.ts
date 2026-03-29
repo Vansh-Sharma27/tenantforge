@@ -153,6 +153,7 @@ export class AuthService {
     // Generate tokens
     const accessToken = generateAccessToken({
       userId: user.id,
+      email: user.email,
     });
 
     const refreshToken = generateRefreshToken({

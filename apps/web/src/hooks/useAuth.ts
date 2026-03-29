@@ -27,8 +27,8 @@ export function useLogin() {
       const payload = JSON.parse(atob(accessToken.split(".")[1]));
       login(
         {
-          id: payload.sub,
-          email: payload.email,
+          id: payload.userId,
+          email: payload.email || "",
           name: null,
           avatarUrl: null,
           status: "ACTIVE",

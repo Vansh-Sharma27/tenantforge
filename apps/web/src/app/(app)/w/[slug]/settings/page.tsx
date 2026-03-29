@@ -12,6 +12,16 @@ import { useUpdateWorkspace, useDeleteWorkspace } from "@/hooks/useWorkspaces";
 import { useAuthStore } from "@/stores/authStore";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
+interface MemberItem {
+  id: string;
+  role: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+}
+
 export default function SettingsPage() {
   const { slug } = useParams<{ slug: string }>();
   const router = useRouter();
@@ -168,18 +178,10 @@ export default function SettingsPage() {
             >
               <option value="">Select a member</option>
               {members
-                .filter(
-                  (m: Record<string, unknown>) =>
-                    (m.user as Record<string, unknown>)?.id !== user?.id && m.role !== "OWNER"
-                )
-                .map((m: Record<string, unknown>) => (
-                  <option
-                    key={m.id as string}
-                    value={(m.user as Record<string, unknown>)?.id as string}
-                  >
-                    {((m.user as Record<string, unknown>)?.name as string) ||
-                      ((m.user as Record<string, unknown>)?.email as string)}{" "}
-                    ({m.role as string})
+                .filter((m: MemberItem) => m.user?.id !== user?.id && m.role !== "OWNER")
+                .map((m: MemberItem) => (
+                  <option key={m.id} value={m.user?.id}>
+                    {m.user?.name || m.user?.email} ({m.role})
                   </option>
                 ))}
             </select>

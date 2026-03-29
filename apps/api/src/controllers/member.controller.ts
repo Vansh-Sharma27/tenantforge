@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 
 import {
   listMembersQuerySchema,
@@ -6,6 +7,13 @@ import {
   transferOwnershipSchema,
 } from "@/schemas/member.schema";
 import { memberService } from "@/services/member.service";
+
+/**
+ * Path parameter schema for member ID
+ */
+const memberIdParamSchema = z.object({
+  id: z.string().min(1, "Member ID is required"),
+});
 
 /**
  * Member controller handling HTTP requests/responses for member management
@@ -58,7 +66,7 @@ export class MemberController {
     try {
       // Validate input
       const input = updateMemberRoleSchema.parse(req.body);
-      const { id: membershipId } = req.params;
+      const { id: membershipId } = memberIdParamSchema.parse(req.params);
 
       // Ensure user and membership are attached
       if (!req.membership || !membershipId) {
@@ -90,7 +98,7 @@ export class MemberController {
    */
   async removeMember(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id: membershipId } = req.params;
+      const { id: membershipId } = memberIdParamSchema.parse(req.params);
 
       // Ensure workspace and membership are attached
       if (!req.workspace || !req.membership || !membershipId) {

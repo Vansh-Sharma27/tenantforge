@@ -9,6 +9,15 @@ import { Card, Button, Badge, Skeleton } from "@/components/ui";
 import { CreateWorkspaceModal } from "@/components/workspace/CreateWorkspaceModal";
 import { useWorkspaces } from "@/hooks/useWorkspaces";
 
+interface WorkspaceListItem {
+  id: string;
+  name: string;
+  slug: string;
+  plan: string;
+  membership: { role: string; joinedAt: string };
+  _count?: { memberships: number };
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { data: workspaces, isLoading } = useWorkspaces();
@@ -75,19 +84,19 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {workspaces?.map((ws: Record<string, unknown>) => (
-            <Card key={ws.id as string} hover onClick={() => router.push(`/w/${ws.slug}`)}>
+          {workspaces?.map((ws: WorkspaceListItem) => (
+            <Card key={ws.id} hover onClick={() => router.push(`/w/${ws.slug}`)}>
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-subtitle text-black">{ws.name as string}</h3>
-                  <p className="mt-1 text-small text-gray-500">/{ws.slug as string}</p>
+                  <h3 className="text-subtitle text-black">{ws.name}</h3>
+                  <p className="mt-1 text-small text-gray-500">/{ws.slug}</p>
                 </div>
-                <Badge>{ws.plan as string}</Badge>
+                <Badge>{ws.plan}</Badge>
               </div>
               <div className="mt-4 flex items-center justify-between text-small text-gray-500">
                 <span className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5" />
-                  {(ws._count as Record<string, number>)?.memberships ?? "—"} members
+                  {ws._count?.memberships ?? "—"} members
                 </span>
                 <ArrowRight className="h-4 w-4 text-gray-300" />
               </div>

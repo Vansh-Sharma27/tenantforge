@@ -1,4 +1,4 @@
-import { Plan, Role } from "@prisma/client";
+import { Plan, Prisma, Role } from "@prisma/client";
 
 import { membershipRepository } from "@/repositories/membership.repository";
 import { userRepository } from "@/repositories/user.repository";
@@ -201,7 +201,7 @@ export class WorkspaceService {
     workspaceId: string,
     data: {
       name?: string;
-      settings?: Record<string, any>;
+      settings?: Record<string, unknown>;
     }
   ) {
     const { name, settings } = data;
@@ -218,7 +218,7 @@ export class WorkspaceService {
     // Update workspace
     const updatedWorkspace = await workspaceRepository.update(workspaceId, {
       ...(name && { name }),
-      ...(settings && { settings }),
+      ...(settings && { settings: settings as unknown as Prisma.JsonValue }),
     });
 
     // Audit log

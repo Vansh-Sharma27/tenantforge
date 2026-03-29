@@ -30,8 +30,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               localStorage.setItem("tf_refresh_token", data.data.refreshToken);
               setAuthenticated(true);
               setUser({
-                id: payload.sub,
-                email: payload.email,
+                id: payload.userId,
+                email: payload.email || "",
                 name: null,
                 avatarUrl: null,
                 status: "ACTIVE",
@@ -54,8 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAuthenticated(true);
       setUser({
-        id: payload.sub,
-        email: payload.email,
+        id: payload.userId,
+        email: payload.email || "",
         name: null,
         avatarUrl: null,
         status: "ACTIVE",

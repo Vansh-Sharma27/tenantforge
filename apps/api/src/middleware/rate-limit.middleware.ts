@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 
 import { auditService } from "@/services/audit.service";
-import { rateLimitService } from "@/services/rate-limit.service";
+import { rateLimitService, isRateLimitError } from "@/services/rate-limit.service";
 import { AuditActions } from "@/types/audit.types";
 import { logger } from "@/utils/logger";
 
@@ -20,8 +20,8 @@ export async function globalRateLimit(req: Request, res: Response, next: NextFun
     res.setHeader("X-RateLimit-Reset", result.reset.toISOString());
 
     next();
-  } catch (error: any) {
-    if (error.rateLimitExceeded) {
+  } catch (error: unknown) {
+    if (isRateLimitError(error)) {
       // Log rate limit violation
       auditService.log({
         actorType: "system",
@@ -69,8 +69,8 @@ export async function authRateLimit(req: Request, res: Response, next: NextFunct
     res.setHeader("X-RateLimit-Reset", result.reset.toISOString());
 
     next();
-  } catch (error: any) {
-    if (error.rateLimitExceeded) {
+  } catch (error: unknown) {
+    if (isRateLimitError(error)) {
       auditService.log({
         actorType: "system",
         action: AuditActions.RATE_LIMIT_EXCEEDED,
@@ -123,8 +123,8 @@ export async function workspaceRateLimit(req: Request, res: Response, next: Next
     res.setHeader("X-RateLimit-Reset", result.reset.toISOString());
 
     next();
-  } catch (error: any) {
-    if (error.rateLimitExceeded) {
+  } catch (error: unknown) {
+    if (isRateLimitError(error)) {
       const workspace = req.workspace;
 
       auditService.log({

@@ -18,7 +18,12 @@ export class BillingController {
   async createCheckoutSession(req: Request, res: Response, next: NextFunction) {
     try {
       const { plan } = createCheckoutSchema.parse(req.body);
-      const workspace = req.workspace!;
+
+      if (!req.workspace) {
+        return res.status(404).json({ success: false, error: "Workspace not found" });
+      }
+
+      const workspace = req.workspace;
 
       const priceId = PLAN_PRICE_MAP[plan];
       if (!priceId) {
@@ -61,7 +66,11 @@ export class BillingController {
    */
   async createPortalSession(req: Request, res: Response, next: NextFunction) {
     try {
-      const workspace = req.workspace!;
+      if (!req.workspace) {
+        return res.status(404).json({ success: false, error: "Workspace not found" });
+      }
+
+      const workspace = req.workspace;
 
       // Verify workspace has Stripe customer
       if (!workspace.stripeCustomerId) {
@@ -95,21 +104,25 @@ export class BillingController {
    */
   async getBillingInfo(req: Request, res: Response, next: NextFunction) {
     try {
-      const workspace = req.workspace!;
+      if (!req.workspace) {
+        return res.status(404).json({ success: false, error: "Workspace not found" });
+      }
+
+      const workspace = req.workspace;
 
       let subscriptionDetails = null;
 
       // Get subscription details if workspace has one
       if (workspace.stripeSubId) {
         const subscription = await stripeService.getSubscription(workspace.stripeSubId);
-        const subAny = subscription as any;
+        const firstItemPeriodEnd = subscription.items.data[0]?.current_period_end;
 
         subscriptionDetails = {
           status: subscription.status,
-          currentPeriodEnd: subAny.current_period_end
-            ? new Date((subAny.current_period_end as number) * 1000).toISOString()
+          currentPeriodEnd: firstItemPeriodEnd
+            ? new Date(firstItemPeriodEnd * 1000).toISOString()
             : new Date().toISOString(),
-          cancelAtPeriodEnd: subAny.cancel_at_period_end || false,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
         };
       }
 

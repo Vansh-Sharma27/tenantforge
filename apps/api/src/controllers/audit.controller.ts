@@ -16,7 +16,11 @@ export class AuditController {
    */
   async listAuditLogs(req: Request, res: Response, next: NextFunction) {
     try {
-      const workspace = req.workspace!;
+      if (!req.workspace) {
+        return res.status(404).json({ success: false, error: "Workspace not found" });
+      }
+
+      const workspace = req.workspace;
       const query = listAuditLogsSchema.parse(req.query);
 
       const skip = (query.page - 1) * query.limit;

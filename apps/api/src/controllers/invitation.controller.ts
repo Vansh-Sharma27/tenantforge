@@ -1,7 +1,19 @@
 import { Request, Response, NextFunction } from "express";
+import { z } from "zod";
 
 import { sendInvitationSchema } from "@/schemas/invitation.schema";
 import { invitationService } from "@/services/invitation.service";
+
+/**
+ * Path parameter validation schemas
+ */
+const invitationIdParamSchema = z.object({
+  id: z.string().min(1, "Invitation ID is required"),
+});
+
+const tokenParamSchema = z.object({
+  token: z.string().min(1, "Token is required"),
+});
 
 /**
  * Invitation controller handling HTTP requests/responses
@@ -81,8 +93,8 @@ export class InvitationController {
    */
   async revokeInvitation(req: Request, res: Response, next: NextFunction) {
     try {
-      // Extract invitation ID from URL params
-      const invitationId = req.params.id;
+      // Validate path params
+      const { id: invitationId } = invitationIdParamSchema.parse(req.params);
 
       // Ensure user and workspace are attached
       if (!req.user || !req.workspace || !invitationId) {
@@ -118,14 +130,8 @@ export class InvitationController {
    */
   async acceptInvitation(req: Request, res: Response, next: NextFunction) {
     try {
-      // Extract token from URL params
-      const token = req.params.token;
-      if (!token) {
-        return res.status(400).json({
-          success: false,
-          error: "Token required",
-        });
-      }
+      // Validate path params
+      const { token } = tokenParamSchema.parse(req.params);
 
       // User might or might not be authenticated
       const userId = req.user?.userId;
@@ -152,14 +158,8 @@ export class InvitationController {
    */
   async getInvitationDetails(req: Request, res: Response, next: NextFunction) {
     try {
-      // Extract token from URL params
-      const token = req.params.token;
-      if (!token) {
-        return res.status(400).json({
-          success: false,
-          error: "Token required",
-        });
-      }
+      // Validate path params
+      const { token } = tokenParamSchema.parse(req.params);
 
       // Get invitation details
       const result = await invitationService.getInvitationDetails(token);

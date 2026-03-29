@@ -37,12 +37,9 @@ export function useAuditLogs(
   return useQuery<AuditLogResponse>({
     queryKey: ["audit-logs", slug, page, limit, action],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      params.set("page", String(page));
-      params.set("limit", String(limit));
-      if (action) params.set("action", action);
-
-      const { data } = await api.get(`/workspaces/${slug}/audit?${params.toString()}`);
+      const { data } = await api.get(`/workspaces/${slug}/audit`, {
+        params: { page, limit, ...(action && { action }) },
+      });
       return data;
     },
     enabled: !!slug,

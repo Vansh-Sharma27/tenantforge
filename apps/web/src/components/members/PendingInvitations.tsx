@@ -14,6 +14,13 @@ import {
 } from "@/components/ui";
 import { usePendingInvitations, useRevokeInvitation } from "@/hooks/useInvitations";
 
+interface PendingInvitation {
+  id: string;
+  email: string;
+  role: string;
+  expiresAt: string;
+}
+
 interface PendingInvitationsProps {
   slug: string;
 }
@@ -35,20 +42,20 @@ export function PendingInvitations({ slug }: PendingInvitationsProps) {
           <TableHead className="text-right">Actions</TableHead>
         </TableHeader>
         <TableBody>
-          {invitations.map((inv: Record<string, unknown>) => (
-            <TableRow key={inv.id as string}>
-              <TableCell>{inv.email as string}</TableCell>
+          {invitations.map((inv: PendingInvitation) => (
+            <TableRow key={inv.id}>
+              <TableCell>{inv.email}</TableCell>
               <TableCell>
-                <Badge>{inv.role as string}</Badge>
+                <Badge>{inv.role}</Badge>
               </TableCell>
               <TableCell>
                 <span className="text-gray-500">
-                  {format(new Date(inv.expiresAt as string), "MMM d, yyyy")}
+                  {format(new Date(inv.expiresAt), "MMM d, yyyy")}
                 </span>
               </TableCell>
               <TableCell className="text-right">
                 <button
-                  onClick={() => revoke.mutate(inv.id as string)}
+                  onClick={() => revoke.mutate(inv.id)}
                   className="text-gray-400 hover:text-red-500 cursor-pointer transition-default p-1"
                   aria-label={`Revoke invitation to ${inv.email}`}
                   disabled={revoke.isPending}

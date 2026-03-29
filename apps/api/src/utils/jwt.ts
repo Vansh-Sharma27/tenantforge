@@ -9,6 +9,7 @@ import { privateKey, publicKey } from "@/config/keys";
  */
 export interface TokenPayload {
   userId: string;
+  email?: string;
   workspaceId?: string;
   role?: string;
 }

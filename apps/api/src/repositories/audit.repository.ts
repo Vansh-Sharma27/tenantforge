@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import { prisma } from "@/lib/prisma";
 import { AuditEvent } from "@/types/audit.types";
 
@@ -10,7 +12,19 @@ export class AuditRepository {
    */
   async createMany(events: AuditEvent[]) {
     return prisma.auditLog.createMany({
-      data: events as any, // Type cast needed for JsonValue compatibility
+      data: events.map(
+        (e): Prisma.AuditLogCreateManyInput => ({
+          workspaceId: e.workspaceId,
+          actorId: e.actorId,
+          actorType: e.actorType,
+          action: e.action,
+          resourceType: e.resourceType,
+          resourceId: e.resourceId,
+          metadata: (e.metadata ?? {}) as Prisma.InputJsonValue,
+          ipAddress: e.ipAddress,
+          userAgent: e.userAgent,
+        })
+      ),
       skipDuplicates: true,
     });
   }
@@ -22,13 +36,11 @@ export class AuditRepository {
     workspaceId: string,
     options: { skip: number; take: number; action?: string }
   ) {
-    const where: Record<string, unknown> = { workspaceId };
-    if (options.action) {
-      where.action = options.action;
-    }
-
     return prisma.auditLog.findMany({
-      where,
+      where: {
+        workspaceId,
+        ...(options.action ? { action: { startsWith: options.action } } : {}),
+      },
       skip: options.skip,
       take: options.take,
       orderBy: { createdAt: "desc" },
@@ -51,11 +63,12 @@ export class AuditRepository {
    * Count audit logs by workspace
    */
   async countByWorkspace(workspaceId: string, action?: string): Promise<number> {
-    const where: Record<string, unknown> = { workspaceId };
-    if (action) {
-      where.action = action;
-    }
-    return prisma.auditLog.count({ where });
+    return prisma.auditLog.count({
+      where: {
+        workspaceId,
+        ...(action ? { action: { startsWith: action } } : {}),
+      },
+    });
   }
 
   /**

@@ -29,8 +29,14 @@ const workspaceSlugSchema = z
 
 /**
  * Workspace settings validation
+ * Limits keys to 20 and values to strings/numbers/booleans for safety
  */
-const workspaceSettingsSchema = z.record(z.unknown()).optional();
+const workspaceSettingsSchema = z
+  .record(z.union([z.string().max(1000), z.number(), z.boolean(), z.null()]))
+  .refine((obj) => Object.keys(obj).length <= 20, {
+    message: "Settings cannot have more than 20 keys",
+  })
+  .optional();
 
 /**
  * Create workspace request schema

@@ -1,4 +1,4 @@
-import { Workspace, Plan } from "@prisma/client";
+import { Workspace, Membership, Plan, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
@@ -13,7 +13,7 @@ export class WorkspaceRepository {
     name: string;
     slug: string;
     plan?: Plan;
-    settings?: Record<string, any>;
+    settings?: Record<string, unknown>;
     stripeCustomerId?: string;
   }): Promise<Workspace> {
     return await prisma.workspace.create({
@@ -21,7 +21,7 @@ export class WorkspaceRepository {
         name: data.name,
         slug: data.slug,
         plan: data.plan || Plan.FREE,
-        settings: data.settings || {},
+        settings: (data.settings || {}) as Prisma.InputJsonValue,
         stripeCustomerId: data.stripeCustomerId,
       },
     });
@@ -60,7 +60,7 @@ export class WorkspaceRepository {
   async findBySlugWithMembership(
     slug: string,
     userId: string
-  ): Promise<{ workspace: Workspace; membership: any } | null> {
+  ): Promise<{ workspace: Workspace; membership: Membership } | null> {
     const workspace = await prisma.workspace.findFirst({
       where: {
         slug,
@@ -92,7 +92,7 @@ export class WorkspaceRepository {
         createdAt: workspace.createdAt,
         updatedAt: workspace.updatedAt,
       },
-      membership: workspace.memberships[0],
+      membership: workspace.memberships[0]!,
     };
   }
 
@@ -107,7 +107,7 @@ export class WorkspaceRepository {
   ): Promise<Workspace> {
     return await prisma.workspace.update({
       where: { id },
-      data: data as any, // Type assertion needed for JsonValue compatibility
+      data: data as Prisma.WorkspaceUpdateInput,
     });
   }
 

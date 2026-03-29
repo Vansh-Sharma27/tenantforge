@@ -58,9 +58,8 @@ export class InvitationService {
     // Generate secure token
     const token = randomBytes(32).toString("hex");
 
-    // Set expiry: 7 days from now
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
+    // Set expiry: 7 days from now (immutable construction)
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     // Create invitation record
     const invitation = await invitationRepository.create({

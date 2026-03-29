@@ -132,11 +132,10 @@ export class WebhookController {
    * Handle invoice.paid
    */
   private async handleInvoicePaid(invoice: Stripe.Invoice) {
-    const invoiceAny = invoice as any;
+    const rawSub = invoice.parent?.subscription_details?.subscription;
     const subscriptionId =
-      typeof invoiceAny.subscription === "string"
-        ? invoiceAny.subscription
-        : invoiceAny.subscription?.id;
+      rawSub == null ? undefined : typeof rawSub === "string" ? rawSub : rawSub.id;
+
     if (!subscriptionId) {
       return;
     }
@@ -162,11 +161,10 @@ export class WebhookController {
    * Handle invoice.payment_failed
    */
   private async handlePaymentFailed(invoice: Stripe.Invoice) {
-    const invoiceAny = invoice as any;
+    const rawSub = invoice.parent?.subscription_details?.subscription;
     const subscriptionId =
-      typeof invoiceAny.subscription === "string"
-        ? invoiceAny.subscription
-        : invoiceAny.subscription?.id;
+      rawSub == null ? undefined : typeof rawSub === "string" ? rawSub : rawSub.id;
+
     if (!subscriptionId) {
       return;
     }

@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { Role } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
@@ -32,25 +33,19 @@ export class MemberService {
     const { page, limit, search, role } = options;
     const skip = (page - 1) * limit;
 
-    // Build where clause for filtering
-    const whereClause: any = {
+    // Build where clause for filtering (immutable construction)
+    const whereClause: Prisma.MembershipWhereInput = {
       workspaceId,
+      ...(role && { role }),
+      ...(search && {
+        user: {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { email: { contains: search, mode: "insensitive" } },
+          ],
+        },
+      }),
     };
-
-    // Add role filter if provided
-    if (role) {
-      whereClause.role = role;
-    }
-
-    // Add search filter for user name or email
-    if (search) {
-      whereClause.user = {
-        OR: [
-          { name: { contains: search, mode: "insensitive" } },
-          { email: { contains: search, mode: "insensitive" } },
-        ],
-      };
-    }
 
     // Fetch members with pagination
     const members = await prisma.membership.findMany({
