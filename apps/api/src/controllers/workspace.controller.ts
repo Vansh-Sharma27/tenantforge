@@ -144,10 +144,14 @@ export class WorkspaceController {
       }
 
       // Update workspace
-      const result = await workspaceService.updateWorkspace(req.workspace.id, {
-        name: input.name,
-        settings: input.settings,
-      });
+      const result = await workspaceService.updateWorkspace(
+        req.workspace.id,
+        req.user?.userId ?? "",
+        {
+          name: input.name,
+          settings: input.settings,
+        }
+      );
 
       res.status(200).json({
         success: true,

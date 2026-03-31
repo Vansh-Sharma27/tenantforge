@@ -1,6 +1,13 @@
 import Stripe from "stripe";
 
-import { stripe } from "@/config/stripe";
+import { getStripe } from "@/config/stripe";
+import {
+  AppError,
+  BadRequestError,
+  InternalServerError,
+  NotFoundError,
+  TooManyRequestsError,
+} from "@/utils/errors";
 import { logger } from "@/utils/logger";
 
 interface CreateCustomerParams {
@@ -23,11 +30,35 @@ interface CreateCheckoutSessionParams {
 
 export class StripeService {
   /**
+   * Maps Stripe errors to appropriate AppError subclasses.
+   */
+  private handleStripeError(error: unknown, context: string): never {
+    if (error instanceof Stripe.errors.StripeCardError) {
+      throw new BadRequestError(`Card error: ${error.message}`);
+    }
+    if (error instanceof Stripe.errors.StripeRateLimitError) {
+      throw new TooManyRequestsError("Stripe rate limit exceeded. Please try again later.");
+    }
+    if (error instanceof Stripe.errors.StripeInvalidRequestError) {
+      // Distinguish "not found" from other invalid requests
+      if (error.statusCode === 404 || error.message?.toLowerCase().includes("no such")) {
+        throw new NotFoundError("Stripe resource");
+      }
+      throw new BadRequestError(`Invalid Stripe request: ${error.message}`);
+    }
+    if (error instanceof Stripe.errors.StripeAPIError) {
+      throw new InternalServerError("Stripe API error. Please try again.");
+    }
+    logger.error({ error, context }, "Unexpected Stripe error");
+    throw new InternalServerError(context);
+  }
+
+  /**
    * Create a new Stripe customer
    */
   async createCustomer(params: CreateCustomerParams): Promise<Stripe.Customer> {
     try {
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         email: params.userEmail,
         name: params.userName,
         metadata: {
@@ -45,7 +76,36 @@ export class StripeService {
       return customer;
     } catch (error) {
       logger.error({ error, params }, "Failed to create Stripe customer");
-      throw new Error("Failed to create Stripe customer");
+      this.handleStripeError(error, "Failed to create Stripe customer");
+    }
+  }
+
+  /**
+   * Update Stripe customer metadata
+   */
+  async updateCustomerMetadata(
+    customerId: string,
+    metadata: Record<string, string>
+  ): Promise<void> {
+    try {
+      await getStripe().customers.update(customerId, { metadata });
+      logger.info({ customerId }, "Stripe customer metadata updated");
+    } catch (error) {
+      logger.error({ error, customerId }, "Failed to update Stripe customer metadata");
+      this.handleStripeError(error, "Failed to update Stripe customer metadata");
+    }
+  }
+
+  /**
+   * Delete a Stripe customer (used to clean up on DB transaction failure)
+   */
+  async deleteCustomer(customerId: string): Promise<void> {
+    try {
+      await getStripe().customers.del(customerId);
+      logger.info({ customerId }, "Stripe customer deleted");
+    } catch (error) {
+      logger.error({ error, customerId }, "Failed to delete Stripe customer");
+      // Do not rethrow — this is a cleanup call; log and continue
     }
   }
 
@@ -54,26 +114,34 @@ export class StripeService {
    */
   async getCustomer(customerId: string): Promise<Stripe.Customer> {
     try {
-      const customer = await stripe.customers.retrieve(customerId);
+      const customer = await getStripe().customers.retrieve(customerId);
       if (customer.deleted) {
-        throw new Error("Customer has been deleted");
+        throw new NotFoundError("Stripe customer");
       }
       return customer as Stripe.Customer;
     } catch (error) {
+      if (error instanceof AppError) throw error;
       logger.error({ error, customerId }, "Failed to retrieve Stripe customer");
-      throw new Error("Failed to retrieve Stripe customer");
+      this.handleStripeError(error, "Failed to retrieve Stripe customer");
     }
   }
 
   /**
-   * Retrieve a Stripe subscription
+   * Retrieve a Stripe subscription. Returns null if the subscription no longer exists.
    */
-  async getSubscription(subscriptionId: string): Promise<Stripe.Subscription> {
+  async getSubscription(subscriptionId: string): Promise<Stripe.Subscription | null> {
     try {
-      return await stripe.subscriptions.retrieve(subscriptionId);
+      return await getStripe().subscriptions.retrieve(subscriptionId);
     } catch (error) {
+      if (error instanceof Stripe.errors.StripeInvalidRequestError) {
+        logger.warn(
+          { subscriptionId },
+          "Stripe subscription not found — likely cancelled externally"
+        );
+        return null;
+      }
       logger.error({ error, subscriptionId }, "Failed to retrieve Stripe subscription");
-      throw new Error("Failed to retrieve Stripe subscription");
+      this.handleStripeError(error, "Failed to retrieve Stripe subscription");
     }
   }
 
@@ -84,7 +152,7 @@ export class StripeService {
     params: CreateCheckoutSessionParams
   ): Promise<Stripe.Checkout.Session> {
     try {
-      const session = await stripe.checkout.sessions.create({
+      const session = await getStripe().checkout.sessions.create({
         customer: params.customerId,
         mode: "subscription",
         line_items: [
@@ -108,7 +176,7 @@ export class StripeService {
       return session;
     } catch (error) {
       logger.error({ error, params }, "Failed to create checkout session");
-      throw new Error("Failed to create checkout session");
+      this.handleStripeError(error, "Failed to create checkout session");
     }
   }
 
@@ -120,7 +188,7 @@ export class StripeService {
     returnUrl: string
   ): Promise<Stripe.BillingPortal.Session> {
     try {
-      const session = await stripe.billingPortal.sessions.create({
+      const session = await getStripe().billingPortal.sessions.create({
         customer: customerId,
         return_url: returnUrl,
       });
@@ -129,7 +197,7 @@ export class StripeService {
       return session;
     } catch (error) {
       logger.error({ error, customerId }, "Failed to create portal session");
-      throw new Error("Failed to create portal session");
+      this.handleStripeError(error, "Failed to create portal session");
     }
   }
 
@@ -142,10 +210,10 @@ export class StripeService {
     secret: string
   ): Stripe.Event {
     try {
-      return stripe.webhooks.constructEvent(payload, signature, secret);
+      return getStripe().webhooks.constructEvent(payload, signature, secret);
     } catch (error) {
       logger.error({ error }, "Webhook signature verification failed");
-      throw new Error("Webhook signature verification failed");
+      throw new BadRequestError("Webhook signature verification failed");
     }
   }
 }

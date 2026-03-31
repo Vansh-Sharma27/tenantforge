@@ -1,6 +1,7 @@
 /**
  * Role changed email template
  */
+import { escapeHtml } from "../utils/escape";
 export interface RoleChangedEmailData {
   workspaceName: string;
   oldRole: string;
@@ -12,10 +13,13 @@ export function generateRoleChangedEmail(data: RoleChangedEmailData): {
   subject: string;
   html: string;
 } {
-  const { workspaceName, oldRole, newRole, workspaceUrl } = data;
+  const { workspaceUrl } = data;
+  const workspaceName = escapeHtml(data.workspaceName);
+  const oldRole = escapeHtml(data.oldRole);
+  const newRole = escapeHtml(data.newRole);
 
   return {
-    subject: `Your role in ${workspaceName} has been updated`,
+    subject: `Your role in ${data.workspaceName} has been updated`,
     html: `
       <!DOCTYPE html>
       <html lang="en">

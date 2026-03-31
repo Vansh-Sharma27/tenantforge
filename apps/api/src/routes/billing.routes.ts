@@ -1,3 +1,4 @@
+import { Role } from "@prisma/client";
 import { Router } from "express";
 
 import { billingController } from "@/controllers/billing.controller";
@@ -15,7 +16,7 @@ router.use(requireWorkspace);
  * POST /api/v1/workspaces/:slug/billing/checkout
  * Create Stripe Checkout Session (OWNER only)
  */
-router.post("/checkout", requireRole("OWNER"), (req, res, next) =>
+router.post("/checkout", requireRole(Role.OWNER), (req, res, next) =>
   billingController.createCheckoutSession(req, res, next)
 );
 
@@ -23,7 +24,7 @@ router.post("/checkout", requireRole("OWNER"), (req, res, next) =>
  * POST /api/v1/workspaces/:slug/billing/portal
  * Create Stripe Customer Portal Session (OWNER only)
  */
-router.post("/portal", requireRole("OWNER"), (req, res, next) =>
+router.post("/portal", requireRole(Role.OWNER), (req, res, next) =>
   billingController.createPortalSession(req, res, next)
 );
 
@@ -31,7 +32,7 @@ router.post("/portal", requireRole("OWNER"), (req, res, next) =>
  * GET /api/v1/workspaces/:slug/billing
  * Get billing information (ADMIN+ can view)
  */
-router.get("/", requireRole("ADMIN", "OWNER"), (req, res, next) =>
+router.get("/", requireRole(Role.ADMIN, Role.OWNER), (req, res, next) =>
   billingController.getBillingInfo(req, res, next)
 );
 

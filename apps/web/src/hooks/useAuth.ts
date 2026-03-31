@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
 import { useToast } from "@/components/ui/Toast";
@@ -10,6 +10,7 @@ import type {
   ResetPasswordInput,
 } from "@/lib/validators";
 import { useAuthStore } from "@/stores/authStore";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 export function useLogin() {
   const { login } = useAuthStore();
@@ -39,7 +40,13 @@ export function useLogin() {
         accessToken,
         refreshToken
       );
-      router.push("/dashboard");
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirect = searchParams.get("redirect");
+      if (redirect && redirect.startsWith("/") && !redirect.includes("//")) {
+        router.push(redirect);
+      } else {
+        router.push("/dashboard");
+      }
     },
     onError: (error) => {
       toast("error", getApiError(error));
@@ -59,7 +66,13 @@ export function useRegister() {
     },
     onSuccess: () => {
       toast("success", "Account created. Check your email for verification.");
-      router.push("/login");
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirect = searchParams.get("redirect");
+      if (redirect && redirect.startsWith("/") && !redirect.includes("//")) {
+        router.push(redirect);
+      } else {
+        router.push("/login");
+      }
     },
     onError: (error) => {
       toast("error", getApiError(error));
@@ -115,10 +128,22 @@ export function useVerifyEmail() {
 
 export function useLogout() {
   const { logout } = useAuthStore();
+  const { setCurrentWorkspace } = useWorkspaceStore();
+  const queryClient = useQueryClient();
   const router = useRouter();
 
-  return () => {
+  return async () => {
+    const refreshToken = localStorage.getItem("tf_refresh_token");
+    if (refreshToken) {
+      try {
+        await api.post("/auth/logout", { refreshToken });
+      } catch {
+        // Best-effort — still proceed with client-side cleanup
+      }
+    }
     logout();
+    setCurrentWorkspace(null);
+    queryClient.clear();
     router.push("/login");
   };
 }

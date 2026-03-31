@@ -8,7 +8,9 @@ import { logger } from "@/utils/logger";
 
 // Request ID middleware - adds unique ID to each request
 export const requestIdMiddleware = (req: Request, _res: Response, next: NextFunction) => {
-  req.id = (req.headers["x-request-id"] as string) || randomUUID();
+  const headerValue = req.headers["x-request-id"];
+  const clientId = typeof headerValue === "string" ? headerValue.slice(0, 64) : undefined;
+  req.id = clientId || randomUUID();
   next();
 };
 

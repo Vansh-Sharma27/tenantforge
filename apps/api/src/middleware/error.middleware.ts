@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import { ZodError } from "zod";
 
+import { config } from "@/config";
 import { ApiError } from "@/utils/errors";
 import { logger } from "@/utils/logger";
 
@@ -59,7 +60,7 @@ export const errorMiddleware: ErrorRequestHandler = (
     type: "https://tenantforge.dev/errors/internal",
     title: "Internal Server Error",
     status: 500,
-    detail: process.env.NODE_ENV === "development" ? err.message : "An unexpected error occurred",
+    detail: config.isDev ? err.message : "An unexpected error occurred",
     instance: req.path,
     traceId: requestId,
   });
@@ -73,7 +74,7 @@ export const notFoundMiddleware = (req: Request, res: Response) => {
     type: "https://tenantforge.dev/errors/not_found",
     title: "Not Found",
     status: 404,
-    detail: `Route ${req.method} ${req.path} not found`,
+    detail: "The requested resource was not found",
     instance: req.path,
     traceId: requestId,
   });

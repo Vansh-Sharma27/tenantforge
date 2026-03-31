@@ -49,9 +49,12 @@ export async function globalRateLimit(req: Request, res: Response, next: NextFun
       });
     }
 
-    // For other errors, log and continue (fail open)
+    // Fail closed: reject request when rate limiter is unavailable
     logger.error({ error }, "Rate limit check failed");
-    next();
+    return res.status(503).json({
+      status: "error",
+      message: "Service temporarily unavailable",
+    });
   }
 }
 
@@ -97,8 +100,12 @@ export async function authRateLimit(req: Request, res: Response, next: NextFunct
       });
     }
 
+    // Fail closed: reject request when rate limiter is unavailable
     logger.error({ error }, "Auth rate limit check failed");
-    next();
+    return res.status(503).json({
+      status: "error",
+      message: "Service temporarily unavailable",
+    });
   }
 }
 
@@ -156,7 +163,11 @@ export async function workspaceRateLimit(req: Request, res: Response, next: Next
       });
     }
 
+    // Fail closed: reject request when rate limiter is unavailable
     logger.error({ error }, "Workspace rate limit check failed");
-    next();
+    return res.status(503).json({
+      status: "error",
+      message: "Service temporarily unavailable",
+    });
   }
 }

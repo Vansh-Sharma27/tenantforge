@@ -26,7 +26,14 @@ export function useCreateCheckout(slug: string) {
     },
     onSuccess: (data) => {
       if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+        try {
+          const url = new URL(data.checkoutUrl);
+          if (url.hostname.endsWith(".stripe.com")) {
+            window.location.href = data.checkoutUrl;
+          }
+        } catch {
+          // invalid URL — do nothing
+        }
       }
     },
     onError: (error) => {
@@ -45,7 +52,14 @@ export function useCreatePortal(slug: string) {
     },
     onSuccess: (data) => {
       if (data.portalUrl) {
-        window.location.href = data.portalUrl;
+        try {
+          const url = new URL(data.portalUrl);
+          if (url.hostname.endsWith(".stripe.com")) {
+            window.location.href = data.portalUrl;
+          }
+        } catch {
+          // invalid URL — do nothing
+        }
       }
     },
     onError: (error) => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -16,6 +16,9 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, description, children, className }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const modalTitleId = `modal-title-${titleId}`;
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -33,6 +36,47 @@ export function Modal({ open, onClose, title, description, children, className }
     };
   }, [open, onClose]);
 
+  // Focus trap
+  useEffect(() => {
+    if (!open || !containerRef.current) return;
+
+    const focusableSelectors =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusableElements = Array.from(
+      containerRef.current.querySelectorAll<HTMLElement>(focusableSelectors)
+    );
+
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    }
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !containerRef.current) return;
+
+      const focusable = Array.from(
+        containerRef.current.querySelectorAll<HTMLElement>(focusableSelectors)
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleTabKey);
+    return () => document.removeEventListener("keydown", handleTabKey);
+  }, [open]);
+
   if (!open) return null;
 
   return (
@@ -45,9 +89,10 @@ export function Modal({ open, onClose, title, description, children, className }
     >
       <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
       <div
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={modalTitleId}
         className={cn(
           "relative z-10 w-full max-w-md bg-white border border-gray-200 p-6 animate-fade-in overscroll-contain",
           className
@@ -55,7 +100,7 @@ export function Modal({ open, onClose, title, description, children, className }
       >
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h3 id="modal-title" className="text-subtitle text-black">
+            <h3 id={modalTitleId} className="text-subtitle text-black">
               {title}
             </h3>
             {description && <p className="mt-1 text-small text-gray-500">{description}</p>}

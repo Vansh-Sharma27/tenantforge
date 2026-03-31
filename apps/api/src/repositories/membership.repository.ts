@@ -158,6 +158,18 @@ export class MembershipRepository {
       where: { id },
     });
   }
+
+  /**
+   * Finds the OWNER membership for a workspace, including user email
+   */
+  async findOwnerByWorkspaceId(workspaceId: string): Promise<{
+    user: { email: string };
+  } | null> {
+    return await prisma.membership.findFirst({
+      where: { workspaceId, role: Role.OWNER },
+      include: { user: { select: { email: true } } },
+    });
+  }
 }
 
 export const membershipRepository = new MembershipRepository();

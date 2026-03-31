@@ -1,3 +1,5 @@
+import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { userRepository } from "@/repositories/user.repository";
 import type {
   RegisterInput,
@@ -10,7 +12,7 @@ import type {
 import { auditService } from "@/services/audit.service";
 import { emailService } from "@/services/email.service";
 import { AuditActions } from "@/types/audit.types";
-import { AppError } from "@/utils/errors";
+import { AppError, TooManyRequestsError } from "@/utils/errors";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -102,9 +104,19 @@ export class AuthService {
   async login(input: LoginInput, ipAddress?: string, userAgent?: string) {
     const { email, password } = input;
 
+    // Check account lockout
+    const lockoutKey = `login_attempts:${email}`;
+    const attempts = await redis.get(lockoutKey);
+    if (attempts && parseInt(attempts, 10) >= 10) {
+      throw new TooManyRequestsError("Account temporarily locked. Try again in 30 minutes.");
+    }
+
     // Find user by email
     const user = await userRepository.findByEmail(email);
     if (!user || !user.password) {
+      // Increment failed attempts
+      await redis.incr(lockoutKey);
+      await redis.expire(lockoutKey, 1800);
       // Audit failed login attempt
       auditService.log({
         actorType: "user",
@@ -119,6 +131,9 @@ export class AuthService {
     // Verify password
     const isPasswordValid = await verifyPassword(password, user.password);
     if (!isPasswordValid) {
+      // Increment failed attempts
+      await redis.incr(lockoutKey);
+      await redis.expire(lockoutKey, 1800);
       // Audit failed login attempt
       auditService.log({
         actorId: user.id,
@@ -140,11 +155,16 @@ export class AuthService {
       );
     }
 
-    // Create session
+    // Clear login attempts on successful authentication
+    await redis.del(lockoutKey);
+
+    // Create session with a cryptographically random placeholder token
+    // (will be replaced with JWT refresh token once session ID is available)
     const refreshTokenExpiry = getTokenExpiration(24 * 7); // 7 days
+    const placeholderToken = generateRandomToken(64);
     const session = await userRepository.createSession({
       userId: user.id,
-      refreshToken: "temp", // Will be updated below
+      refreshToken: placeholderToken,
       expiresAt: refreshTokenExpiry,
       ipAddress,
       userAgent,
@@ -272,6 +292,12 @@ export class AuthService {
     // Generate reset token
     const resetToken = generateRandomToken(32);
 
+    // Delete any existing password reset tokens for this user
+    const user = await userRepository.findByEmail(email);
+    if (user) {
+      await prisma.passwordReset.deleteMany({ where: { userId: user.id } });
+    }
+
     // Create password reset record (fails silently if user doesn't exist)
     await userRepository.createPasswordResetToken(email, resetToken);
 
@@ -326,6 +352,33 @@ export class AuthService {
     return {
       message: "Password reset successfully. You can now log in with your new password.",
     };
+  }
+
+  /**
+   * Logs out a user by revoking the session associated with the refresh token
+   */
+  async logout(refreshToken: string, userId: string) {
+    const decoded = verifyRefreshToken(refreshToken);
+
+    if (decoded) {
+      const session = await userRepository.findSession(decoded.sessionId);
+
+      if (session && session.userId === userId && !session.revokedAt) {
+        await userRepository.revokeSession(session.id);
+
+        auditService.log({
+          actorId: userId,
+          actorType: "user",
+          action: AuditActions.USER_LOGOUT,
+          resourceType: "session",
+          resourceId: session.id,
+        });
+
+        logger.info({ userId, sessionId: session.id }, "User logged out");
+      }
+    }
+
+    return { message: "Logged out successfully" };
   }
 }
 

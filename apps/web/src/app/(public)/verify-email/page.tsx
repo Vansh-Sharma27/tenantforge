@@ -3,7 +3,7 @@
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useRef } from "react";
 
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { useVerifyEmail } from "@/hooks/useAuth";
@@ -14,11 +14,13 @@ function VerifyEmailContent() {
   const token = searchParams.get("token");
   const verify = useVerifyEmail();
 
+  const hasRun = useRef(false);
   useEffect(() => {
-    if (token && !verify.isSuccess && !verify.isError && !verify.isPending) {
+    if (token && !hasRun.current) {
+      hasRun.current = true;
       verify.mutate(token);
     }
-  }, [token, verify]);
+  }, [token]);
 
   useEffect(() => {
     if (verify.isSuccess) {

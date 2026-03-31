@@ -1,3 +1,4 @@
+import { Role } from "@prisma/client";
 import { Router } from "express";
 
 import { auditController } from "@/controllers/audit.controller";
@@ -14,7 +15,7 @@ router.use(requireWorkspace);
  * GET /api/v1/workspaces/:slug/audit
  * List audit logs (ADMIN+ can view)
  */
-router.get("/", requireRole("ADMIN", "OWNER"), (req, res, next) =>
+router.get("/", requireRole(Role.ADMIN, Role.OWNER), (req, res, next) =>
   auditController.listAuditLogs(req, res, next)
 );
 

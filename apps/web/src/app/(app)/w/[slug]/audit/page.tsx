@@ -60,7 +60,7 @@ export default function AuditLogPage() {
   const [page, setPage] = useState(1);
   const [actionFilter, setActionFilter] = useState("");
 
-  const { data, isLoading } = useAuditLogs(slug, {
+  const { data, isLoading, isError } = useAuditLogs(slug, {
     page,
     limit: 30,
     action: actionFilter || undefined,
@@ -78,6 +78,17 @@ export default function AuditLogPage() {
             <Skeleton key={i} className="h-12 w-full" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div>
+        <PageHeader title="Audit Log" description="Track workspace activity and changes" />
+        <Card className="text-center py-16">
+          <p className="text-body text-red-500">Failed to load audit logs. Please try again.</p>
+        </Card>
       </div>
     );
   }
@@ -149,7 +160,10 @@ export default function AuditLogPage() {
                   {log.metadata && Object.keys(log.metadata).length > 0 && (
                     <p className="mt-0.5 text-xs text-gray-400 truncate">
                       {Object.entries(log.metadata)
-                        .map(([k, v]) => `${k}: ${v}`)
+                        .map(
+                          ([k, v]) =>
+                            `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`
+                        )
                         .join(" · ")}
                     </p>
                   )}

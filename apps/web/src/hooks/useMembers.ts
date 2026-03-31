@@ -4,7 +4,10 @@ import type { Role } from "@tenantforge/shared";
 import { useToast } from "@/components/ui/Toast";
 import { api, getApiError } from "@/lib/api";
 
-export function useMembers(slug: string, params?: { page?: number; search?: string; role?: Role }) {
+export function useMembers(
+  slug: string,
+  params?: { page?: number; limit?: number; search?: string; role?: Role }
+) {
   return useQuery({
     queryKey: ["members", slug, params],
     queryFn: async () => {

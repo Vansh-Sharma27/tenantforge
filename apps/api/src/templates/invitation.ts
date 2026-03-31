@@ -1,6 +1,7 @@
 /**
  * Invitation email template
  */
+import { escapeHtml } from "../utils/escape";
 export interface InvitationEmailData {
   workspaceName: string;
   inviterName: string;
@@ -12,10 +13,13 @@ export function generateInvitationEmail(data: InvitationEmailData): {
   subject: string;
   html: string;
 } {
-  const { workspaceName, inviterName, role, invitationUrl } = data;
+  const { invitationUrl } = data;
+  const workspaceName = escapeHtml(data.workspaceName);
+  const inviterName = escapeHtml(data.inviterName);
+  const role = escapeHtml(data.role);
 
   return {
-    subject: `You've been invited to join ${workspaceName}`,
+    subject: `You've been invited to join ${data.workspaceName}`,
     html: `
       <!DOCTYPE html>
       <html lang="en">

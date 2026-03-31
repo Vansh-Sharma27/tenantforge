@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 
 import { InvitationStatus, Role } from "@prisma/client";
 
+import { prisma } from "@/lib/prisma";
 import { invitationRepository } from "@/repositories/invitation.repository";
 import { membershipRepository } from "@/repositories/membership.repository";
 import { userRepository } from "@/repositories/user.repository";
@@ -144,9 +145,9 @@ export class InvitationService {
       throw new NotFoundError("Invitation");
     }
 
-    // Verify invitation belongs to workspace
+    // Verify invitation belongs to workspace (return 404 to prevent info disclosure)
     if (invitation.workspaceId !== workspaceId) {
-      throw new BadRequestError("Invitation does not belong to this workspace");
+      throw new NotFoundError("Invitation");
     }
 
     // Verify actor has ADMIN+ role
@@ -162,6 +163,20 @@ export class InvitationService {
 
     // Update status to REVOKED
     await invitationRepository.updateStatus(invitationId, InvitationStatus.REVOKED);
+
+    // Audit log
+    auditService.log({
+      workspaceId,
+      actorId: actorId,
+      actorType: "user",
+      action: AuditActions.INVITATION_REVOKED,
+      resourceType: "invitation",
+      resourceId: invitationId,
+      metadata: {
+        email: invitation.email,
+        role: invitation.role,
+      },
+    });
 
     logger.info(
       {
@@ -205,6 +220,12 @@ export class InvitationService {
 
     // If userId provided (existing user accepting)
     if (userId) {
+      // Verify the accepting user's email matches the invitation email
+      const acceptingUser = await userRepository.findById(userId);
+      if (!acceptingUser || acceptingUser.email.toLowerCase() !== invitation.email.toLowerCase()) {
+        throw new ForbiddenError("This invitation was sent to a different email address");
+      }
+
       // Verify user not already member
       const existingMembership = await membershipRepository.findByUserAndWorkspace(
         userId,
@@ -214,16 +235,24 @@ export class InvitationService {
         throw new ConflictError("You are already a member of this workspace");
       }
 
-      // Create membership
-      const membership = await membershipRepository.create({
-        userId,
-        workspaceId: invitation.workspaceId,
-        role: invitation.role,
-        invitedById: invitation.invitedById,
-      });
+      // Create membership and update invitation status atomically
+      const { membership } = await prisma.$transaction(async (tx) => {
+        const ms = await tx.membership.create({
+          data: {
+            userId,
+            workspaceId: invitation.workspaceId,
+            role: invitation.role,
+            invitedById: invitation.invitedById,
+          },
+        });
 
-      // Update invitation status
-      await invitationRepository.updateStatus(invitation.id, InvitationStatus.ACCEPTED);
+        await tx.invitation.update({
+          where: { id: invitation.id },
+          data: { status: InvitationStatus.ACCEPTED },
+        });
+
+        return { membership: ms };
+      });
 
       // Get workspace details
       const workspace = await workspaceRepository.findById(invitation.workspaceId);

@@ -28,6 +28,7 @@ export const AuditActions = {
   MEMBER_ROLE_CHANGED: "member.role_changed",
   MEMBER_REMOVED: "member.removed",
   OWNERSHIP_TRANSFERRED: "ownership.transferred",
+  INVITATION_REVOKED: "invitation.revoked",
 
   // Billing
   SUBSCRIPTION_CREATED: "subscription.created",

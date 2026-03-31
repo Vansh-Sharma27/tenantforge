@@ -2,13 +2,17 @@ import Stripe from "stripe";
 
 import { config } from "@/config";
 
-if (!config.stripe?.secretKey) {
-  throw new Error("Stripe secret key is not configured");
+let stripeClient: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!stripeClient) {
+    if (!config.stripe?.secretKey) {
+      throw new Error("Stripe is not configured. Set STRIPE_SECRET_KEY.");
+    }
+    stripeClient = new Stripe(config.stripe.secretKey, {
+      apiVersion: "2026-01-28.clover",
+      typescript: true,
+    });
+  }
+  return stripeClient;
 }
-
-const stripe: Stripe = new Stripe(config.stripe.secretKey, {
-  apiVersion: "2026-01-28.clover",
-  typescript: true,
-});
-
-export { stripe };

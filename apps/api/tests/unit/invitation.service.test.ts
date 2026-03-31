@@ -461,7 +461,7 @@ describe("InvitationService", () => {
       ).rejects.toThrow(NotFoundError);
     });
 
-    it("should throw BadRequestError if invitation belongs to different workspace", async () => {
+    it("should throw NotFoundError if invitation belongs to different workspace", async () => {
       vi.mocked(invitationRepository.findById).mockResolvedValue({
         ...mockInvitation,
         workspaceId: "different-workspace",
@@ -469,7 +469,7 @@ describe("InvitationService", () => {
 
       await expect(
         invitationService.revokeInvitation(mockInvitationId, mockWorkspaceId, mockActorId)
-      ).rejects.toThrow(BadRequestError);
+      ).rejects.toThrow(NotFoundError);
     });
 
     it("should throw ForbiddenError if actor is not a member", async () => {
@@ -535,6 +535,23 @@ describe("InvitationService", () => {
 
     describe("with userId (existing user)", () => {
       const existingUserId = "existing-user-123";
+
+      const mockAcceptingUser = {
+        id: existingUserId,
+        email: mockEmail,
+        name: "Accepting User",
+        password: "hashed",
+        status: "ACTIVE" as const,
+        avatarUrl: null,
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      beforeEach(() => {
+        // Mock the accepting user lookup for email verification
+        vi.mocked(userRepository.findById).mockResolvedValue(mockAcceptingUser);
+      });
 
       it("should create membership and accept invitation", async () => {
         const mockMembership = {

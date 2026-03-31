@@ -21,8 +21,9 @@ export function createApp(): Express {
   // CORS
   app.use(
     cors({
-      origin: config.isDev ? true : [config.server.appUrl],
-      credentials: true,
+      origin: config.isDev
+        ? ["http://localhost:3000", "http://localhost:3001", config.server.appUrl]
+        : [config.server.appUrl],
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
     })
@@ -40,9 +41,19 @@ export function createApp(): Express {
   // Global rate limiting (applied to all routes)
   app.use(globalRateLimit);
 
-  // Body parsing (Note: Webhooks use raw body, configured separately in webhook.routes.ts)
-  app.use(express.json({ limit: "100kb" }));
-  app.use(express.urlencoded({ extended: true, limit: "100kb" }));
+  // Body parsing (skip for webhook routes that require raw body for HMAC verification)
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/v1/webhooks")) {
+      return next();
+    }
+    express.json({ limit: "100kb" })(req, res, next);
+  });
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/v1/webhooks")) {
+      return next();
+    }
+    express.urlencoded({ extended: true, limit: "100kb" })(req, res, next);
+  });
 
   // Routes
   app.use(routes);

@@ -27,11 +27,15 @@ export function CreateWorkspaceModal({ open, onClose }: CreateWorkspaceModalProp
   const create = useCreateWorkspace();
 
   const onSubmit = async (data: CreateWorkspaceInput) => {
-    const result = await create.mutateAsync(data);
-    reset();
-    onClose();
-    if (result?.workspace?.slug) {
-      router.push(`/w/${result.workspace.slug}`);
+    try {
+      const result = await create.mutateAsync(data);
+      reset();
+      onClose();
+      if (result?.slug) {
+        router.push(`/w/${result.slug}`);
+      }
+    } catch {
+      // error handled by mutation, keep modal open
     }
   };
 

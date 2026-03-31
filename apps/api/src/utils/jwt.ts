@@ -37,7 +37,7 @@ const REFRESH_TOKEN_EXPIRY = "7d"; // 7 days
  */
 export function generateAccessToken(payload: TokenPayload): string {
   const jti = randomBytes(16).toString("hex"); // Unique token ID
-  return jwt.sign(payload, privateKey, {
+  return jwt.sign({ ...payload, type: "access" }, privateKey, {
     algorithm: ALGORITHM,
     expiresIn: ACCESS_TOKEN_EXPIRY,
     issuer: "tenantforge",
@@ -54,7 +54,7 @@ export function generateAccessToken(payload: TokenPayload): string {
  */
 export function generateRefreshToken(payload: RefreshPayload): string {
   const jti = randomBytes(16).toString("hex"); // Unique token ID
-  return jwt.sign(payload, privateKey, {
+  return jwt.sign({ ...payload, type: "refresh" }, privateKey, {
     algorithm: ALGORITHM,
     expiresIn: REFRESH_TOKEN_EXPIRY,
     issuer: "tenantforge",
@@ -75,7 +75,11 @@ export function verifyAccessToken(token: string): TokenPayload | null {
       algorithms: [ALGORITHM],
       issuer: "tenantforge",
       audience: "tenantforge-api",
-    }) as TokenPayload;
+    }) as TokenPayload & { type?: string };
+
+    if (decoded.type !== "access") {
+      return null;
+    }
 
     return decoded;
   } catch (error) {
@@ -96,7 +100,11 @@ export function verifyRefreshToken(token: string): RefreshPayload | null {
       algorithms: [ALGORITHM],
       issuer: "tenantforge",
       audience: "tenantforge-api",
-    }) as RefreshPayload;
+    }) as RefreshPayload & { type?: string };
+
+    if (decoded.type !== "refresh") {
+      return null;
+    }
 
     return decoded;
   } catch (error) {

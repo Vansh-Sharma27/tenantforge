@@ -115,15 +115,18 @@ export class BillingController {
       // Get subscription details if workspace has one
       if (workspace.stripeSubId) {
         const subscription = await stripeService.getSubscription(workspace.stripeSubId);
-        const firstItemPeriodEnd = subscription.items.data[0]?.current_period_end;
 
-        subscriptionDetails = {
-          status: subscription.status,
-          currentPeriodEnd: firstItemPeriodEnd
-            ? new Date(firstItemPeriodEnd * 1000).toISOString()
-            : new Date().toISOString(),
-          cancelAtPeriodEnd: subscription.cancel_at_period_end,
-        };
+        if (subscription) {
+          const firstItemPeriodEnd = subscription.items.data[0]?.current_period_end;
+
+          subscriptionDetails = {
+            status: subscription.status,
+            currentPeriodEnd: firstItemPeriodEnd
+              ? new Date(firstItemPeriodEnd * 1000).toISOString()
+              : new Date().toISOString(),
+            cancelAtPeriodEnd: subscription.cancel_at_period_end,
+          };
+        }
       }
 
       res.status(200).json({
@@ -131,6 +134,7 @@ export class BillingController {
         data: {
           plan: workspace.plan,
           subscription: subscriptionDetails,
+          status: subscriptionDetails ? subscriptionDetails.status : "none",
           hasStripeCustomer: !!workspace.stripeCustomerId,
         },
         meta: {

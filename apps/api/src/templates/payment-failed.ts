@@ -1,6 +1,7 @@
 /**
  * Payment failed email template
  */
+import { escapeHtml } from "../utils/escape";
 export interface PaymentFailedEmailData {
   workspaceName: string;
   billingUrl: string;
@@ -11,10 +12,11 @@ export function generatePaymentFailedEmail(data: PaymentFailedEmailData): {
   subject: string;
   html: string;
 } {
-  const { workspaceName, billingUrl, attemptCount } = data;
+  const { billingUrl, attemptCount } = data;
+  const workspaceName = escapeHtml(data.workspaceName);
 
   return {
-    subject: `Payment failed for ${workspaceName}`,
+    subject: `Payment failed for ${data.workspaceName}`,
     html: `
       <!DOCTYPE html>
       <html lang="en">

@@ -2,11 +2,20 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 
 import { auditRepository } from "@/repositories/audit.repository";
+import { AuditActions } from "@/types/audit.types";
+
+const validAuditActions = Object.values(AuditActions);
 
 const listAuditLogsSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
-  action: z.string().optional(),
+  action: z
+    .string()
+    .max(50)
+    .refine((val) => validAuditActions.includes(val as (typeof validAuditActions)[number]), {
+      message: "Invalid audit action",
+    })
+    .optional(),
 });
 
 export class AuditController {

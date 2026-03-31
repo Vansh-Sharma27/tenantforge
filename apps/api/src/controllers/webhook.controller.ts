@@ -3,8 +3,8 @@ import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
 
 import { config } from "@/config";
-import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
+import { membershipRepository } from "@/repositories/membership.repository";
 import { workspaceRepository } from "@/repositories/workspace.repository";
 import { auditService } from "@/services/audit.service";
 import { emailService } from "@/services/email.service";
@@ -34,26 +34,32 @@ export class WebhookController {
       }
 
       // Verify webhook signature
-      const event = stripeService.verifyWebhookSignature(
-        req.body,
-        signature,
-        config.stripe.webhookSecret
-      );
+      let event: Stripe.Event;
+      try {
+        event = stripeService.verifyWebhookSignature(
+          req.body,
+          signature,
+          config.stripe.webhookSecret
+        );
+      } catch (err) {
+        logger.warn({ error: err }, "Stripe webhook signature verification failed");
+        return res.status(400).json({ error: "Invalid webhook signature" });
+      }
 
-      // Idempotency check using Redis
+      // Idempotency check: GET first so failed events can be retried by Stripe
       const eventKey = `stripe_webhook:${event.id}`;
-      const processed = await redis.get(eventKey);
+      const alreadyProcessed = await redis.get(eventKey);
 
-      if (processed) {
+      if (alreadyProcessed !== null) {
         logger.info({ eventId: event.id }, "Webhook event already processed");
         return res.status(200).json({ received: true });
       }
 
-      // Handle event by type
+      // Handle event by type — set idempotency key ONLY after success
       await this.handleEvent(event);
 
-      // Mark event as processed (24h TTL)
-      await redis.setex(eventKey, 86400, "processed");
+      // Mark as processed with 24h TTL after successful handling
+      await redis.set(eventKey, "processed", "EX", 86400);
 
       res.status(200).json({ received: true });
     } catch (error) {
@@ -107,6 +113,13 @@ export class WebhookController {
 
     // Determine plan from price ID
     const subscription = await stripeService.getSubscription(session.subscription as string);
+    if (!subscription) {
+      logger.warn(
+        { subscriptionId: session.subscription },
+        "Subscription not found in Stripe during checkout completion"
+      );
+      return;
+    }
     const priceId = subscription.items.data[0]?.price.id;
     const plan = this.mapPriceToPlan(priceId);
 
@@ -185,10 +198,7 @@ export class WebhookController {
       });
 
       // Notify workspace owner about payment failure
-      const owner = await prisma.membership.findFirst({
-        where: { workspaceId: workspace.id, role: "OWNER" },
-        include: { user: { select: { email: true } } },
-      });
+      const owner = await membershipRepository.findOwnerByWorkspaceId(workspace.id);
 
       if (owner?.user?.email) {
         await emailService.sendPaymentFailedEmail(
@@ -275,7 +285,8 @@ export class WebhookController {
       return Plan.ENTERPRISE;
     }
 
-    return Plan.PRO; // Default to PRO if unknown
+    logger.warn({ priceId }, "Unknown Stripe price ID - defaulting to FREE");
+    return Plan.FREE; // Default to FREE if unknown to prevent unauthorized upgrades
   }
 }
 

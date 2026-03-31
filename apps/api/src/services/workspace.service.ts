@@ -1,5 +1,6 @@
 import { Plan, Prisma, Role } from "@prisma/client";
 
+import { prisma } from "@/lib/prisma";
 import { membershipRepository } from "@/repositories/membership.repository";
 import { userRepository } from "@/repositories/user.repository";
 import { workspaceRepository } from "@/repositories/workspace.repository";
@@ -75,51 +76,98 @@ export class WorkspaceService {
       logger.warn({ error }, "Failed to create Stripe customer - continuing without billing");
     }
 
-    // Create workspace with FREE plan and default settings
-    const workspace = await workspaceRepository.create({
-      name,
-      slug: finalSlug,
-      plan: Plan.FREE,
-      settings: {},
-      stripeCustomerId,
-    });
+    // Create workspace and owner membership atomically
+    let workspace: Awaited<ReturnType<typeof workspaceRepository.findById>>;
+    let membership: Awaited<ReturnType<typeof membershipRepository.create>>;
 
-    // Create membership with OWNER role
-    const membership = await membershipRepository.create({
-      userId,
-      workspaceId: workspace.id,
-      role: Role.OWNER,
-      invitedById: userId,
-    });
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        // Create workspace with FREE plan and default settings
+        let ws;
+        try {
+          ws = await tx.workspace.create({
+            data: {
+              name,
+              slug: finalSlug,
+              plan: Plan.FREE,
+              settings: {},
+              stripeCustomerId,
+            },
+          });
+        } catch (error) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+            throw new ConflictError(
+              "A workspace with this slug already exists. Please try a different name."
+            );
+          }
+          throw error;
+        }
+
+        // Create membership with OWNER role
+        const ms = await tx.membership.create({
+          data: {
+            userId,
+            workspaceId: ws.id,
+            role: Role.OWNER,
+            invitedById: userId,
+          },
+        });
+
+        return { workspace: ws, membership: ms };
+      });
+
+      workspace = result.workspace;
+      membership = result.membership;
+    } catch (error) {
+      // BUG-H02: clean up orphaned Stripe customer if DB transaction failed
+      if (stripeCustomerId) {
+        await stripeService.deleteCustomer(stripeCustomerId);
+      }
+      throw error;
+    }
+
+    // BUG-H01: update Stripe customer metadata with the real workspace ID
+    if (stripeCustomerId) {
+      try {
+        await stripeService.updateCustomerMetadata(stripeCustomerId, {
+          workspaceId: workspace!.id,
+        });
+      } catch (error) {
+        logger.warn(
+          { error, workspaceId: workspace!.id },
+          "Failed to update Stripe customer metadata"
+        );
+      }
+    }
 
     // Audit log
     auditService.log({
-      workspaceId: workspace.id,
+      workspaceId: workspace!.id,
       actorId: userId,
       actorType: "user",
       action: AuditActions.WORKSPACE_CREATED,
       resourceType: "workspace",
-      resourceId: workspace.id,
+      resourceId: workspace!.id,
       metadata: {
-        name: workspace.name,
-        slug: workspace.slug,
-        plan: workspace.plan,
+        name: workspace!.name,
+        slug: workspace!.slug,
+        plan: workspace!.plan,
       },
     });
 
     logger.info(
       {
         userId,
-        workspaceId: workspace.id,
-        workspaceSlug: workspace.slug,
+        workspaceId: workspace!.id,
+        workspaceSlug: workspace!.slug,
         hasStripeCustomer: !!stripeCustomerId,
       },
       "Workspace created"
     );
 
     return {
-      workspace,
-      membership,
+      workspace: workspace!,
+      membership: membership!,
     };
   }
 
@@ -136,20 +184,19 @@ export class WorkspaceService {
     const { page, limit } = pagination;
     const skip = (page - 1) * limit;
 
-    // Get workspaces with user's role and join date
+    // Get workspaces with user's role and join date — fetch limit+1 to detect hasMore
     const workspaces = await membershipRepository.findWorkspacesByUser(userId, {
       skip,
-      take: limit,
+      take: limit + 1,
     });
 
-    // Calculate total count for pagination meta
-    // Note: This is a simplification - in production, you'd want a separate count query
-    const hasMore = workspaces.length === limit;
+    const hasMore = workspaces.length > limit;
+    const pageWorkspaces = hasMore ? workspaces.slice(0, limit) : workspaces;
 
     logger.info(
       {
         userId,
-        count: workspaces.length,
+        count: pageWorkspaces.length,
         page,
         limit,
       },
@@ -157,7 +204,7 @@ export class WorkspaceService {
     );
 
     return {
-      workspaces,
+      workspaces: pageWorkspaces,
       pagination: {
         page,
         limit,
@@ -199,6 +246,7 @@ export class WorkspaceService {
    */
   async updateWorkspace(
     workspaceId: string,
+    userId: string,
     data: {
       name?: string;
       settings?: Record<string, unknown>;
@@ -224,6 +272,7 @@ export class WorkspaceService {
     // Audit log
     auditService.log({
       workspaceId,
+      actorId: userId,
       actorType: "user",
       action: AuditActions.WORKSPACE_UPDATED,
       resourceType: "workspace",

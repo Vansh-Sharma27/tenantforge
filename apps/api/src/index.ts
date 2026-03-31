@@ -1,4 +1,8 @@
 import { config } from "@/config";
+import { prisma } from "@/lib/prisma";
+import { emailQueue } from "@/lib/queue";
+import { redis } from "@/lib/redis";
+import { auditService } from "@/services/audit.service";
 import { logger } from "@/utils/logger";
 import { shutdownEmailWorker } from "@/workers/email.worker";
 
@@ -22,6 +26,10 @@ const shutdown = async () => {
     try {
       // Shutdown email worker
       await shutdownEmailWorker();
+      await auditService.stop();
+      await emailQueue.close();
+      await redis.quit();
+      await prisma.$disconnect();
       logger.info("All services closed");
       process.exit(0);
     } catch (error) {

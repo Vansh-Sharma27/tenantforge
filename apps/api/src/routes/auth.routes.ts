@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { authController } from "@/controllers/auth.controller";
+import { requireAuth } from "@/middleware/auth.middleware";
 import { authRateLimit } from "@/middleware/rate-limit.middleware";
 
 const router: Router = Router();
@@ -28,6 +29,11 @@ router.post("/forgot-password", authRateLimit, (req, res, next) =>
 );
 router.post("/reset-password", authRateLimit, (req, res, next) =>
   authController.resetPassword(req, res, next)
+);
+
+// Logout (requires valid access token)
+router.post("/logout", requireAuth, authRateLimit, (req, res, next) =>
+  authController.logout(req, res, next)
 );
 
 export default router;

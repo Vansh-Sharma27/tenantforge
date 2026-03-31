@@ -1,6 +1,7 @@
 /**
  * Member removed email template
  */
+import { escapeHtml } from "../utils/escape";
 export interface MemberRemovedEmailData {
   workspaceName: string;
 }
@@ -9,10 +10,10 @@ export function generateMemberRemovedEmail(data: MemberRemovedEmailData): {
   subject: string;
   html: string;
 } {
-  const { workspaceName } = data;
+  const workspaceName = escapeHtml(data.workspaceName);
 
   return {
-    subject: `You've been removed from ${workspaceName}`,
+    subject: `You've been removed from ${data.workspaceName}`,
     html: `
       <!DOCTYPE html>
       <html lang="en">

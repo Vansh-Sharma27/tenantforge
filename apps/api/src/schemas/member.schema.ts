@@ -59,7 +59,7 @@ export const listMembersQuerySchema = z.object({
     .default("50")
     .transform((val) => parseInt(val, 10))
     .pipe(z.number().min(1, "Limit must be at least 1").max(100, "Limit cannot exceed 100")),
-  search: z.string().optional(),
+  search: z.string().max(100).optional(),
   role: z.enum([Role.OWNER, Role.ADMIN, Role.MEMBER, Role.VIEWER]).optional(),
 });
 

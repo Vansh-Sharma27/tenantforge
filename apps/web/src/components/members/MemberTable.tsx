@@ -125,8 +125,12 @@ export function MemberTable({ members, slug, actorRole, actorUserId }: MemberTab
             loading={removeMember.isPending}
             onClick={async () => {
               if (removeTarget) {
-                await removeMember.mutateAsync(removeTarget.id);
-                setRemoveTarget(null);
+                try {
+                  await removeMember.mutateAsync(removeTarget.id);
+                  setRemoveTarget(null);
+                } catch {
+                  // error handled by mutation
+                }
               }
             }}
           >

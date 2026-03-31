@@ -9,6 +9,7 @@ import {
   resetPasswordSchema,
 } from "@/schemas/auth.schema";
 import { authService } from "@/services/auth.service";
+import { UnauthorizedError } from "@/utils/errors";
 
 /**
  * Authentication controller handling HTTP requests/responses
@@ -144,6 +145,33 @@ export class AuthController {
       const input = resetPasswordSchema.parse(req.body);
 
       const result = await authService.resetPassword(input);
+
+      res.status(200).json({
+        success: true,
+        data: result,
+        meta: {
+          requestId: res.locals.requestId,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/v1/auth/logout
+   * Revokes the session associated with the provided refresh token
+   */
+  async logout(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.user) {
+        throw new UnauthorizedError("Authentication required");
+      }
+
+      const input = refreshTokenSchema.parse(req.body);
+
+      const result = await authService.logout(input.refreshToken, req.user.userId);
 
       res.status(200).json({
         success: true,

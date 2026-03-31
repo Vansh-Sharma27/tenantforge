@@ -1,3 +1,5 @@
+import { randomBytes } from "crypto";
+
 /**
  * Converts text to a URL-friendly slug.
  *
@@ -39,10 +41,5 @@ export function slugify(text: string): string {
  * generateRandomSuffix() // "a9b3"
  */
 export function generateRandomSuffix(): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let suffix = "";
-  for (let i = 0; i < 4; i++) {
-    suffix += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return suffix;
+  return randomBytes(2).toString("hex");
 }

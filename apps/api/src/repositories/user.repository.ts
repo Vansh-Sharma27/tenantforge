@@ -1,3 +1,5 @@
+import { createHash } from "crypto";
+
 import { User } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
@@ -44,11 +46,12 @@ export class UserRepository {
    */
   async createEmailVerificationToken(userId: string, token: string): Promise<void> {
     const expiresAt = getTokenExpiration(24); // 24 hours
+    const hashedToken = createHash("sha256").update(token).digest("hex");
 
     await prisma.user.update({
       where: { id: userId },
       data: {
-        emailVerificationToken: token,
+        emailVerificationToken: hashedToken,
         emailVerificationExpiry: expiresAt,
       },
     });
@@ -58,10 +61,13 @@ export class UserRepository {
    * Verifies user email using verification token
    */
   async verifyEmail(token: string): Promise<User | null> {
+    // Hash the incoming token to compare against stored hash
+    const hashedToken = createHash("sha256").update(token).digest("hex");
+
     // Find user with matching token
     const user = await prisma.user.findFirst({
       where: {
-        emailVerificationToken: token,
+        emailVerificationToken: hashedToken,
         emailVerificationExpiry: {
           gt: new Date(), // Token not expired
         },
@@ -104,10 +110,12 @@ export class UserRepository {
       return; // Silently fail to prevent user enumeration
     }
 
+    const hashedToken = createHash("sha256").update(token).digest("hex");
+
     await prisma.passwordReset.create({
       data: {
         userId: user.id,
-        token,
+        token: hashedToken,
         expiresAt,
       },
     });
@@ -117,9 +125,11 @@ export class UserRepository {
    * Finds a valid password reset token
    */
   async findPasswordResetToken(token: string) {
+    const hashedToken = createHash("sha256").update(token).digest("hex");
+
     return await prisma.passwordReset.findFirst({
       where: {
-        token,
+        token: hashedToken,
         expiresAt: {
           gt: new Date(),
         },

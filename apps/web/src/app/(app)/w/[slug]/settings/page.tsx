@@ -2,7 +2,7 @@
 
 import type { Role } from "@tenantforge/shared";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -31,10 +31,15 @@ export default function SettingsPage() {
   const isOwner = role === "OWNER";
 
   // Edit workspace name
-  const { register, handleSubmit } = useForm({
+  const { register, handleSubmit, reset } = useForm({
     defaultValues: { name: currentWorkspace?.name || "" },
   });
   const update = useUpdateWorkspace(slug);
+
+  // Sync form when workspace data loads or changes (BUG-F-006)
+  useEffect(() => {
+    reset({ name: currentWorkspace?.name || "" });
+  }, [currentWorkspace, reset]);
 
   // Delete workspace
   const [showDelete, setShowDelete] = useState(false);
@@ -47,7 +52,7 @@ export default function SettingsPage() {
   const [transferTarget, setTransferTarget] = useState("");
   const [transferPassword, setTransferPassword] = useState("");
   const transfer = useTransferOwnership(slug);
-  const { data: membersData } = useMembers(slug, { page: 1 });
+  const { data: membersData } = useMembers(slug, { page: 1, limit: 100 });
   const members = membersData?.data || [];
 
   return (
@@ -57,7 +62,14 @@ export default function SettingsPage() {
       {/* General */}
       <Card className="mb-8">
         <h3 className="text-subtitle text-black mb-4">General</h3>
-        <form onSubmit={handleSubmit((data) => update.mutate(data))} className="space-y-4">
+        <form
+          onSubmit={handleSubmit((formData) =>
+            update.mutate(formData, {
+              onSuccess: (result) => reset({ name: result.name }),
+            })
+          )}
+          className="space-y-4"
+        >
           <Input label="Workspace Name" {...register("name")} />
           <div>
             <label className="block text-small font-medium text-gray-900 mb-1.5">Slug</label>
@@ -147,8 +159,12 @@ export default function SettingsPage() {
               disabled={deleteConfirm !== currentWorkspace?.name}
               loading={deleteWorkspace.isPending}
               onClick={async () => {
-                await deleteWorkspace.mutateAsync(deletePassword);
-                router.replace("/dashboard");
+                try {
+                  await deleteWorkspace.mutateAsync(deletePassword);
+                  router.replace("/dashboard");
+                } catch {
+                  // error handled by mutation, keep modal open
+                }
               }}
             >
               Delete Workspace
@@ -209,13 +225,17 @@ export default function SettingsPage() {
               disabled={!transferTarget || !transferPassword}
               loading={transfer.isPending}
               onClick={async () => {
-                await transfer.mutateAsync({
-                  targetUserId: transferTarget,
-                  password: transferPassword,
-                });
-                setShowTransfer(false);
-                setTransferTarget("");
-                setTransferPassword("");
+                try {
+                  await transfer.mutateAsync({
+                    targetUserId: transferTarget,
+                    password: transferPassword,
+                  });
+                  setShowTransfer(false);
+                  setTransferTarget("");
+                  setTransferPassword("");
+                } catch {
+                  // error handled by mutation, keep modal open
+                }
               }}
             >
               Transfer Ownership

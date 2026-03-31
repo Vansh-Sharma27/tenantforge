@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { X } from "lucide-react";
+import { useState } from "react";
 
 import {
   Table,
@@ -28,6 +29,7 @@ interface PendingInvitationsProps {
 export function PendingInvitations({ slug }: PendingInvitationsProps) {
   const { data: invitations, isLoading } = usePendingInvitations(slug);
   const revoke = useRevokeInvitation(slug);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   if (isLoading || !invitations?.length) return null;
 
@@ -55,10 +57,16 @@ export function PendingInvitations({ slug }: PendingInvitationsProps) {
               </TableCell>
               <TableCell className="text-right">
                 <button
-                  onClick={() => revoke.mutate(inv.id)}
+                  onClick={() => {
+                    setRevokingId(inv.id);
+                    revoke.mutate(inv.id, {
+                      onSuccess: () => setRevokingId(null),
+                      onError: () => setRevokingId(null),
+                    });
+                  }}
                   className="text-gray-400 hover:text-red-500 cursor-pointer transition-default p-1"
                   aria-label={`Revoke invitation to ${inv.email}`}
-                  disabled={revoke.isPending}
+                  disabled={revokingId === inv.id}
                 >
                   <X className="h-4 w-4" />
                 </button>

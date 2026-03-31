@@ -12,7 +12,7 @@ const invitationIdParamSchema = z.object({
 });
 
 const tokenParamSchema = z.object({
-  token: z.string().min(1, "Token is required"),
+  token: z.string().min(1, "Token is required").max(256),
 });
 
 /**

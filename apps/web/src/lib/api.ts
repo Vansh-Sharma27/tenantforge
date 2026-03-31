@@ -35,8 +35,10 @@ function processQueue(error: unknown, token: string | null) {
   failedQueue.forEach((p) => {
     if (error) {
       p.reject(error);
+    } else if (token) {
+      p.resolve(token);
     } else {
-      p.resolve(token!);
+      p.reject(new Error("Token refresh failed"));
     }
   });
   failedQueue = [];

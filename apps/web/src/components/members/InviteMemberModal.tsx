@@ -27,9 +27,13 @@ export function InviteMemberModal({ open, onClose, slug }: InviteMemberModalProp
   const invite = useSendInvitation(slug);
 
   const onSubmit = async (data: InviteMemberInput) => {
-    await invite.mutateAsync(data);
-    reset();
-    onClose();
+    try {
+      await invite.mutateAsync(data);
+      reset();
+      onClose();
+    } catch {
+      // error handled by mutation, keep modal open
+    }
   };
 
   return (

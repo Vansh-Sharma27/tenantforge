@@ -1,6 +1,7 @@
 /**
  * Welcome email template
  */
+import { escapeHtml } from "../utils/escape";
 export interface WelcomeEmailData {
   workspaceName: string;
   workspaceUrl: string;
@@ -10,10 +11,11 @@ export function generateWelcomeEmail(data: WelcomeEmailData): {
   subject: string;
   html: string;
 } {
-  const { workspaceName, workspaceUrl } = data;
+  const { workspaceUrl } = data;
+  const workspaceName = escapeHtml(data.workspaceName);
 
   return {
-    subject: `Welcome to ${workspaceName}!`,
+    subject: `Welcome to ${data.workspaceName}!`,
     html: `
       <!DOCTYPE html>
       <html lang="en">

@@ -24,7 +24,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
 
   // Workspace not found (soft-deleted or invalid slug) — redirect to dashboard
   useEffect(() => {
-    if (!isLoading && (isError || !data)) {
+    if (!isLoading && !data && isError) {
       router.replace("/dashboard");
     }
   }, [isLoading, data, isError, router]);
@@ -43,9 +43,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
     );
   }
 
-  if (isError || !data) {
-    return null;
-  }
+  if (!data) return null; // will be caught by redirect effect
 
   return <>{children}</>;
 }
